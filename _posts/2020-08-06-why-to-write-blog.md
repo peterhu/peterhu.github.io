@@ -1,7 +1,7 @@
 ---
 layout: mypost
 title: 我要开始写博客了
-categories: [费曼技巧,学习方法,简历,心流]
+categories: [思考]
 ---
 
 ## 
