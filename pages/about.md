@@ -3,30 +3,25 @@ layout: mypost
 title: 关于我
 ---
 
-> Hello 陌生人，欢迎访问 TMaize Blog
-
-该博客托管于 GitHub Page，国内默认解析到腾讯云，以保证国内外的访问速度。留言页面使用腾讯的“吐个槽”，另外使用的腾讯的 MTA 分析工具统计访问量
-
-主题是自己写的，见[tmaize-blog](https://github.com/TMaize/tmaize-blog)，喜欢的话可以给个小星星。另外欢迎添加友链，在[留言板](chat.html)留言即可
+> 欢迎访问 我的 Blog, 我是Peter，是一名码农。从事底层固件的开发工作。
 
 ## 相关技能
 
-- 熟悉 JavaScript 语言， 熟练使用 Vue 全家桶,jQuery 等前端框架
+- 熟悉笔记本和服务器x86平的CPU和芯片组，有ARM和8051嵌入式平台的固件开发经验。
+- 熟悉CPU/CCX, DF, DDR, PCIe，SATA, USB, IPMI, QPI, ACPI等工业标准。
+- 深入理解UEFI spec，在InsydeH20, UDK codebase上有多年的开发经验，也了解AMI Aptio。
+- 熟练使用C/C++, 熟悉Python，ASM, JAVA等编程语言。熟悉Widnows和Linux的开发环境。
+- 熟练使用ITP/PYSV，HDT/KYSY, DDT,Windbg等调试工具进行BIOS，APP, Driver的调试。
+- 熟悉软件的开发周期，软件的设计，问题的追踪，代码评审和版本控制。
+- 熟悉项目管理，沟通协调，进度管理，有带领团队的经验。
 
-- 熟悉 Java，NodeJs,Go 等后端语言
-
-- 后端框架 Spring，Hibernate，JFinal，Mybatis 略有了解
-
-- 数据库方面能熟练使用 MySQL,Oracle，MongoDB
-
-- Linux 的简单使用，各种服务的搭建
-
-- 能够使用 Git/SVN 对代码版本进行控制
 
 ## 联系我
 
-- QQ&nbsp;&nbsp;&nbsp;&nbsp;: 1772314831
+- QQ&nbsp;&nbsp;&nbsp;&nbsp;: hu3142
 
-- Email&nbsp;: [tmaize@qq.com](http://mail.qq.com/cgi-bin/qm_share?t=qm_mailme&email=YBQNAQkaBSAREU4DDw0)
+- QQ&nbsp;&nbsp;&nbsp;&nbsp;: 1973371200
 
-- GitHub: [https://github.com/tmaize](https://github.com/tmaize)
+- Email&nbsp;: [oopshugf@google.com]
+
+- GitHub: [https://github.com/peterhu](https://github.com/peterhu)
