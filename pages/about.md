@@ -18,7 +18,7 @@ title: 关于我
 
 ## 联系我
 
-- QQ&nbsp;&nbsp;&nbsp;&nbsp;: hu3142
+- Wechat&nbsp;&nbsp;&nbsp;&nbsp;: hu3142
 
 - QQ&nbsp;&nbsp;&nbsp;&nbsp;: 1973371200
 

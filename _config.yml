@@ -20,7 +20,7 @@ exclude: ['CNAME', 'README.md', 'LICENSE', '_site', 'dist', 'Gemfile', 'Gemfile.
 baseurl: ''
 
 # 吐个槽地址，会在chat页面中重定向到该地址
-tucaoUrl: https://support.qq.com/product/86335
+tucaoUrl: https://support.qq.com/product/192303
 
 # 菜单
 menu:
