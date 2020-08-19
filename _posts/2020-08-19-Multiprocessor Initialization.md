@@ -64,9 +64,9 @@ void spin_unlock(struct spinlock *lock)
 }
 ```
 Refer: 
-	[1. sdm-vol-1-2abcd-3abcd.pdf] (https://software.intel.com/sites/default/files/managed/39/c5/325462-sdm-vol-1-2abcd-3abcd.pdf)
-	[2. Multiprocessor Initialization]  (https://www.cs.usfca.edu/~cruse/cs630f08/lesson22.ppt)
-	[3. spinlock前世今生] (https://zhuanlan.zhihu.com/p/133445693)
+- [1. sdm-vol-1-2abcd-3abcd.pdf] (https://software.intel.com/sites/default/files/managed/39/c5/325462-sdm-vol-1-2abcd-3abcd.pdf)
+- [2. Multiprocessor Initialization](https://www.cs.usfca.edu/~cruse/cs630f08/lesson22.ppt)
+- [3. spinlock前世今生] (https://zhuanlan.zhihu.com/p/133445693)
 
 
 
