@@ -10,7 +10,7 @@ MP初始化指的是在一个有至少2个或者多个处理器的系统里，�
 
 # **1.BSP AP处理器：
 MP的系统里定义了2种类型的处理器: BSP 和 AP。BSP是boot strap processor， AP是指application processor。其实BSP和AP并没有本质的区别而且也不是固定的，BSP是由硬件动态选择的。其中一种算法是，上电以后每个处理器执行BIST(built in self test)，通过自检以后，大家都去monitor BNR(Bus Not Ready)的信号。如果BNR#一直在翻转，说明还没有ready。一旦BNR#停止翻转，每个处理器都尝试发一个NOP special cycle，第一个成功发出的就是BSP。BSP选出来以后，它会把IA32_APIC_BASE MSR里面的BSP flag设置起来。然后就会开始从reset vector开始执行。其它的AP就会进入"wait-for-SIPI state"。
-(mp.png)
+-破事水![line](mp.png)
 MP初始化协议算法：
 在BSP，AP选出以后，通常BSP的初始化顺序为：
 - 1. 初始化内存。
@@ -64,9 +64,9 @@ void spin_unlock(struct spinlock *lock)
 }
 ```
 Refer: 
-- [1. sdm-vol-1-2abcd-3abcd.pdf] (https://software.intel.com/sites/default/files/managed/39/c5/325462-sdm-vol-1-2abcd-3abcd.pdf)
+- [1. sdm-vol-1-2abcd-3abcd.pdf](https://software.intel.com/sites/default/files/managed/39/c5/325462-sdm-vol-1-2abcd-3abcd.pdf) 
 - [2. Multiprocessor Initialization](https://www.cs.usfca.edu/~cruse/cs630f08/lesson22.ppt)
-- [3. spinlock前世今生] (https://zhuanlan.zhihu.com/p/133445693)
+- [3. spinlock前世今生](https://zhuanlan.zhihu.com/p/133445693)
 
 
 
