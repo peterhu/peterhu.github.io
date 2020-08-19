@@ -10,7 +10,7 @@ MP初始化指的是在一个有至少2个或者多个处理器的系统里，�
 
 # **1.BSP AP处理器:**
 MP的系统里定义了2种类型的处理器: BSP 和 AP。BSP是boot strap processor， AP是指application processor。其实BSP和AP并没有本质的区别而且也不是固定的，BSP是由硬件动态选择的。其中一种算法是，上电以后每个处理器执行BIST(built in self test)，通过自检以后，大家都去monitor BNR(Bus Not Ready)的信号。如果BNR#一直在翻转，说明还没有ready。一旦BNR#停止翻转，每个处理器都尝试发一个NOP special cycle，第一个成功发出的就是BSP。BSP选出来以后，它会把IA32_APIC_BASE MSR里面的BSP flag设置起来。然后就会开始从reset vector开始执行。其它的AP就会进入"wait-for-SIPI state"。
-	-[line](mp.png)
+	![MP](mp.png)
 MP初始化协议算法：
 在BSP，AP选出以后，通常BSP的初始化顺序为：
 - 1. 初始化内存。
@@ -22,7 +22,7 @@ MP初始化协议算法：
 - 7. Program ICR寄存器，把AP start-up code地址写到该寄存器
 - 8. 在AP start-up code里,每个AP将会增加一个COUNT变量表示AP已经起来了
 - 9. 广播INIT-SIPI-SIPI IPI sequence to the Aps,这时所有的AP才会真正被唤醒起来执行
-	-[line](init-sipi-sipi.png)
+	![Ini-sipi-sipi](init-sipi-sipi.png)
 通常AP的初始化顺序为:
 - 1. 获取Lock信号量
 - 2. 加载microcode
@@ -36,11 +36,11 @@ MP初始化协议算法：
 
 # **2. APIC**
 APIC 是高级可编程中断控制器,每个CPU都有一个。有两种模式APIC和X2APIC（支持更多的中断）mode。在MP初始化的过程中，我们需要enable APIC，SVR(0xFEE000F0)寄存器的bit8是用来en/disable它的
-	-[line](lapic.png)
+	![lapic](lapic.png)
 APIC ID是每个处理器的编号，是有microcode生成的然后写APICID寄存器中，通常是8bits。 BSP一般都是0
-	-[line](apicid.png)
+	![apicid](apicid.png)
 Inter-Processor Interrupt（IPI）是处理器间传递消息的机制，BSP会给AP发INIT IPI和SIPI。实现的机制是通过BSP去program APIC中的ICR寄存器去发IPI. Destination field 通常填的就是APIC ID
-	-[line](icr.png)
+	![icr](icr.png)
 
 # **3.  Atomic operation and Spin Lock**
 原子操作原子操作在MP过程中在在计数器等地方，这类情况下数据有并发的危险，但是用锁去保护又显得有些浪费，所以使用原子类型操作。X86处理器提供了lock prefix可以帮住解决这样的场景。
