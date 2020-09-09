@@ -13,24 +13,24 @@ MP的系统里定义了2种类型的处理器: BSP 和 AP。BSP是boot strap pro
 	![MP](mp.png)
 MP初始化协议算法：
 在BSP，AP选出以后，通常BSP的初始化顺序为：
-- 1. 初始化内存。
-- 2. 加载microcode
-- 3. 初始化MTRRs
-- 4. 初始化Cache
-- 5. 加载AP start-up code到1Mbyte以下的4K内存中。
-- 6. Enable APIC (SVR bit8）
-- 7. Program ICR寄存器，把AP start-up code地址写到该寄存器
-- 8. 在AP start-up code里,每个AP将会增加一个COUNT变量表示AP已经起来了
-- 9. 广播INIT-SIPI-SIPI IPI sequence to the Aps,这时所有的AP才会真正被唤醒起来执行
+1. 初始化内存。
+2. 加载microcode
+3. 初始化MTRRs
+4. 初始化Cache
+5. 加载AP start-up code到1Mbyte以下的4K内存中。
+6. Enable APIC (SVR bit8）
+7. Program ICR寄存器，把AP start-up code地址写到该寄存器
+8. 在AP start-up code里,每个AP将会增加一个COUNT变量表示AP已经起来了
+9. 广播INIT-SIPI-SIPI IPI sequence to the Aps,这时所有的AP才会真正被唤醒起来执行
 	![Ini-sipi-sipi](init-sipi-sipi.png)
 通常AP的初始化顺序为:
-- 1. 获取Lock信号量
-- 2. 加载microcode
-- 3. 初始化MTRR
-- 4. Enable cache
-- 5. 增加COUNT表示AP起来了
-- 6. 释放信号量
-- 7. CLI+HLT
+1. 获取Lock信号量
+2. 加载microcode
+3. 初始化MTRR
+4. Enable cache
+5. 增加COUNT表示AP起来了
+6. 释放信号量
+7. CLI+HLT
 
 在MP 初始化协议算法里有几个关键的机制,1. APIC (IPI,APIC ID,SVR) 2. Atomic operation and Spin Lock，需要专门的介绍一下：
 
