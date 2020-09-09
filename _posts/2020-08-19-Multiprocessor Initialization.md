@@ -23,6 +23,7 @@ MP初始化协议算法：
 -  在AP start-up code里,每个AP将会增加一个COUNT变量表示AP已经起来了
 -  广播INIT-SIPI-SIPI IPI sequence to the Aps,这时所有的AP才会真正被唤醒起来执行
 	![Ini-sipi-sipi](init-sipi-sipi.png)
+
 通常AP的初始化顺序为:
 -  获取Lock信号量
 -  加载microcode
