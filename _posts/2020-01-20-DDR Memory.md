@@ -61,6 +61,7 @@ Write Command 将通过 A[12:0] 信号，发送需要写入的 Column 的地址�
 DRAM 的 Storage Cell 中的电荷会随着时间慢慢减少，为了保证其存储的信息不丢失，需要周期性的对其进行刷新操作。 SDRAM 的刷新是按 Row 进行，标准中定义了在一个刷新周期内（常温下 64ms，高温下 32ms）需要完成一次所有 Row 的刷新操作。 为了简化 SDRAM Controller 的设计，SDRAM 标准定义了 Auto-Refresh 机制，该机制要求 SDRAM Controller 在一个刷新周期内，发送 8192 个 Auto-Refresh Command，即 AR， 给 SDRAM。 SDRAM 每收到一个 AR，就进行 n 个 Row 的刷新操作，其中，n = 总的 Row 数量 / 8192 。此外，SDRAM 内部维护一个刷新计数器，每完成一次刷新操作，就将计数器更新为下一次需要进行刷新操作的 Row。 一般情况下，SDRAM Controller 会周期性的发送 AR，每两个 AR 直接的时间间隔定义为 tREFI = 64ms / 8192 = 7.8 us。 SDRAM 完成一次刷新操作所需要的时间定义为 tRFC, 这个时间会随着 SDRAM Row 的数量的增加而变大。 由于 AR 会占用总线，阻塞正常的数据请求，同时 SDRAM 在执行 refresh 操作是很费电，所以在 SDRAM 的标准中，还提供了一些优化的措施，例如 DRAM Controller 可以最多延时 8 个 tREFI 后，再一起把 8 个 AR 同时发出。 
 - Self-Refresh 
 Host 还可以让 SDRAM 进入 Self-Refresh 模式，降低功耗。在该模式下，Host 不能对 SDRAM 进行读写操作，SDRAM 内部自行进行刷新操作保证数据的完整。通常在设备进入待机状态时，Host 会让 SDRAM 进入 Self-Refresh 模式，以节省功耗。 
+
 **DDR的读写时序：**
 在读写 memor之前要先通过CS#选定相应的PBANK(RANK), 接下来通过BA0,BA1选通LBANK，接下来就是通过行有效(RAS#)和列有效(CAS#)选通具体的行和列，然后就可以进行读写了。但是因为行地址和列地址都是共用地址线，所以在RAS#切换到CAS#之间一定有一个间隔用于保证芯片存储阵列电子元件响应时间，这个时间叫做为tRCD，即RAS to CAS Delay（RAS至CAS延迟）单位是时钟周期。
 	![tRCD](tRCD.png)
