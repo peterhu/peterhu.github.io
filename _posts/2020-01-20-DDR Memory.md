@@ -45,7 +45,7 @@ Bank的读取和写入操作。首先memory controller会将地址和控制信�
 **BA0-BA1：**Bank 选通信号。
 **CKE：**时钟使能信号。
 **DM0-DMi:** 数据掩码
-# **DDR的Command：**
+**DDR的Command：**
 Host 与 SDRAM 之间的交互都是由 Host 以 Command 的形式发起的。一个 Command 由多个信号组合而成，下面表格中描述了主要的 Command。
 	![CmdTable](CmdTable.png)
 - Active 
@@ -61,22 +61,22 @@ Write Command 将通过 A[12:0] 信号，发送需要写入的 Column 的地址�
 DRAM 的 Storage Cell 中的电荷会随着时间慢慢减少，为了保证其存储的信息不丢失，需要周期性的对其进行刷新操作。 SDRAM 的刷新是按 Row 进行，标准中定义了在一个刷新周期内（常温下 64ms，高温下 32ms）需要完成一次所有 Row 的刷新操作。 为了简化 SDRAM Controller 的设计，SDRAM 标准定义了 Auto-Refresh 机制，该机制要求 SDRAM Controller 在一个刷新周期内，发送 8192 个 Auto-Refresh Command，即 AR， 给 SDRAM。 SDRAM 每收到一个 AR，就进行 n 个 Row 的刷新操作，其中，n = 总的 Row 数量 / 8192 。此外，SDRAM 内部维护一个刷新计数器，每完成一次刷新操作，就将计数器更新为下一次需要进行刷新操作的 Row。 一般情况下，SDRAM Controller 会周期性的发送 AR，每两个 AR 直接的时间间隔定义为 tREFI = 64ms / 8192 = 7.8 us。 SDRAM 完成一次刷新操作所需要的时间定义为 tRFC, 这个时间会随着 SDRAM Row 的数量的增加而变大。 由于 AR 会占用总线，阻塞正常的数据请求，同时 SDRAM 在执行 refresh 操作是很费电，所以在 SDRAM 的标准中，还提供了一些优化的措施，例如 DRAM Controller 可以最多延时 8 个 tREFI 后，再一起把 8 个 AR 同时发出。 
 - Self-Refresh 
 Host 还可以让 SDRAM 进入 Self-Refresh 模式，降低功耗。在该模式下，Host 不能对 SDRAM 进行读写操作，SDRAM 内部自行进行刷新操作保证数据的完整。通常在设备进入待机状态时，Host 会让 SDRAM 进入 Self-Refresh 模式，以节省功耗。 
-# **DDR的读写时序：# **
+**DDR的读写时序：**
 在读写 memor之前要先通过CS#选定相应的PBANK(RANK), 接下来通过BA0,BA1选通LBANK，接下来就是通过行有效(RAS#)和列有效(CAS#)选通具体的行和列，然后就可以进行读写了。但是因为行地址和列地址都是共用地址线，所以在RAS#切换到CAS#之间一定有一个间隔用于保证芯片存储阵列电子元件响应时间，这个时间叫做为tRCD，即RAS to CAS Delay（RAS至CAS延迟）单位是时钟周期。
 	![tRCD](tRCD.png)
 在列地址确定了以后，只需要将数据通过DQ送给总线上即可。但是从CAS#到真正的数据输出到总线其实还需要一段时间，被称为CL/RL（CAS Latency，CAS潜伏期）。为什么需要这个时间呢，主要是因为存储单元的需要一定的反应时间，所以不可能和CAS在同一个上升沿触发。另外电容容量很小，信号需要放大（S-AMP)识别以后才能送到总线上，这也需要一段时间被称为tAC （Access Time from CLK，时钟触发后的访问时间）。tAC的单位是ns。
 	![tAC](tAC.png)
 数据写入时也是在tRCD之后进行，但是并不需要CL. 虽然数据可以和CAS#同时送出，但是因为选通三极管与电容的充电必须要要有一段时间，所以真正的数据写入需要一定的周期，都会留出足够的写入/校正时间（tWR，Write Recovery Time），这个操作也被称作写回（Write Back）。tWR至少占用一个时钟周期或再多一点。
 	![tWB](tWB.png)
-# **Burst Mode:# **
+**Burst Mode: **
 是指同一行的相邻的存储单元连续进行传输的方式，连续传输的数量称之为突发长度 BL(Burst Length)。在未使用Burst的情况下，连续读写多个数据会导致内存控制资源被占用（要一直发读取cmd和列地址），在数据传送期间无法输入新的命令。
 	![BL1](BL1.png)
 使用了突发传输模式以后只要指定列起始地址和BL，内存就会自动依次读取后续相应数量的存储单元而且并不需要一直提供列地址。BL 有 1，2，4，8。
 	![BL2](BL2.png)
-# **Memory 地址映射:# **
+**Memory 地址映射:**
 SDRAM Controller 的主要功能之一是将 CPU 对指定物理地址的内存访问操作，转换为 SDRAM 读写时序，完成数据的传输。在实际的产品中，通常需要考虑 CPU 中的物理地址到 SDRAM 的 Bank、Row 和 Column 地址映射。下图是一个 32 位物理地址映射的一个例子：
 	![AddMap](AddMap.png)
-# **DDR2 VS DDR3 VS DDR4：# **
+**DDR2 VS DDR3 VS DDR4：**
 DDR从发明之初直到DDR4并没有太大的变化，都是通过调整prefetch bits 不断的增加传输速度，核心频率一直保持在100-266MHZ之间，prefetch最大8n。但是到了DDR4以后增加prefetch的方法玩不下去了，因为cache line最大只有64Bytes，8bit prefetch时一条cahe line 需要BL8就可以满足了，如果是16 bit prefetch一次取128bits BL8就会是128 Bytes，其中的64Bytes被浪费了，所以DDR4开始提升核心频率到200-400MHZ了。
 	![DDRVS](DDRVS.png)
 另外DDR4 还引入了Bank Group的机制用于提升性能。具体来说就是每个Bank Group可以独立读写数据，这样一来内部的数据吞吐量大幅度提升，可以同时读取大量的数据，内存的等效频率在这种设置下也得到巨大的提升。DDR4架构上采用了8n预取的Bank Group分组，包括使用两个或者四个可选择的Bank Group分组，这将使得DDR4内存的每个Bank Group分组都有独立的激活、读取、写入和刷新操作。类似于多路传输，在一个工作时钟周期内可以最多同时处理4组数据，从而改进内存的整体效率和带宽。
@@ -128,7 +128,7 @@ DQS positioning 分为 Read DQS Timing和 Write Data Timing两种，他们的目
 		Read DQS Delay = x12h -> Write DQ Delays of （x07h -> x23h） pass
 	- 计算出他们的中点（平均值）并且设置相应的Write DQ Delay timing的值。这里的平均值是（0x7+0x23) / 2 = 0x15.
 	![DQS](DQS.png)
-	
+
 **Max Read Latency：**
 它是用来告诉CPU/Memory Controler 什么时候可以读到来自于DRAM的数据。
 - 它会基于一些固定的内部延迟以及物理DDR的配置来计算。
