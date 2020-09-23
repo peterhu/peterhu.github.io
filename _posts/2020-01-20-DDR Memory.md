@@ -68,7 +68,7 @@ Host 还可以让 SDRAM 进入 Self-Refresh 模式，降低功耗。在该模式
 	![tAC](tAC.png)
 数据写入时也是在tRCD之后进行，但是并不需要CL. 虽然数据可以和CAS#同时送出，但是因为选通三极管与电容的充电必须要要有一段时间，所以真正的数据写入需要一定的周期，都会留出足够的写入/校正时间（tWR，Write Recovery Time），这个操作也被称作写回（Write Back）。tWR至少占用一个时钟周期或再多一点。
 	![tWB](tWB.png)
-**Burst Mode: **
+**Burst Mode:**
 是指同一行的相邻的存储单元连续进行传输的方式，连续传输的数量称之为突发长度 BL(Burst Length)。在未使用Burst的情况下，连续读写多个数据会导致内存控制资源被占用（要一直发读取cmd和列地址），在数据传送期间无法输入新的命令。
 	![BL1](BL1.png)
 使用了突发传输模式以后只要指定列起始地址和BL，内存就会自动依次读取后续相应数量的存储单元而且并不需要一直提供列地址。BL 有 1，2，4，8。
@@ -81,7 +81,8 @@ DDR从发明之初直到DDR4并没有太大的变化，都是通过调整prefetc
 	![DDRVS](DDRVS.png)
 另外DDR4 还引入了Bank Group的机制用于提升性能。具体来说就是每个Bank Group可以独立读写数据，这样一来内部的数据吞吐量大幅度提升，可以同时读取大量的数据，内存的等效频率在这种设置下也得到巨大的提升。DDR4架构上采用了8n预取的Bank Group分组，包括使用两个或者四个可选择的Bank Group分组，这将使得DDR4内存的每个Bank Group分组都有独立的激活、读取、写入和刷新操作。类似于多路传输，在一个工作时钟周期内可以最多同时处理4组数据，从而改进内存的整体效率和带宽。
 	![DDR4BG](DDR4BG.png)
-# **Memory Training :# **
+
+# **Memory Training :**
 从CPU 角度来看每个在DIMM 上的DRAM距离CPU的距离是不同的。从DIMM本身来看 DRAM Chip的CLK 和 Data信号是不等长的（有偏差）所以需要Training. Training是用来补偿来自板子和DRAM的延时。
 
 **DQS Receiver Enable：**
