@@ -119,27 +119,19 @@ tDQSS（DQS, DQS# rising edge to CK, CK# rising edge，在标准中要求为+/-0
 
 布线要求：1. 只有使用了fly-by的情况下需使能write leveling 2.CPU内部的内存控制器只能对DQS信号做延迟，不能做超前处理，所以CK要大于DQS信号线的长度，否则将不能满足tDQSS。
 
-**DQS Positioning:**
-DQS positioning 分为 Read DQS Timing和 Write Data Timing两种，他们的目的是用来保证DQS的信号要在DQ data eye的中间。
+**DQS Centering:**
+DQS Centering 分为 Read DQS Timing和 Write Data Timing两种，他们的目的是用来保证DQS的信号要在DQ data eye的中间。
 - Read DQS Timing: 通过在读数据的时候， CPU/Memory controller 通过调整内部的DLL延迟锁定回路电路，延迟DQS 使得它在DQ data eye的中间。具体的training过程是：
 	- 对于Memory的每个channel的每个rank写一个cacheline的特定类型的数据。将ReadDQSTiming 和Write Data Timing 都初始化为0x00。
-		- 然后读回数据并标记基于现在的ReadDQS timing的情况 PASS或者Fail。
-		- 增加ReadDQSTiming delay,继续步骤a.直到找到最大可以pass的ReadDQSTiming delay。
-	- 增加Write Data Timing delay,继续步骤1。当且仅当出现连续3组pass的情况，取中间的一组数据并记录ReadDqsTiming的平均值，如：这里的ReadDQSTiming delay = (0x00 + 0x24)/2 = 0x12.
-		- Write Delay = x05h -> No passes 
-		- Write Delay = x06h -> Read Delays of x11h -> x14h pass 
-		- Write Delay = x07h -> No passes 
-		- Write Delay = x08h -> Read Delays of (x01h -> x23h) pass 
-		- Write Delay = x09h -> Read Delays of (x00h -> x24h) pass 
-		- Write Delay = x0Ah -> Read Delays of (x00h -> x24h) pass 
+	- 然后读回数据并标记基于现在的ReadDQS timing的情况 PASS或者Fail。
+	- 增加ReadDQSTiming delay,继续步骤a.直到找到最大可以pass的ReadDQSTiming delay。
+	- 增加Write Data Timing delay,继续步骤1。当且仅当出现连续3组pass的情况，取中间的一组数据并记录ReadDqsTiming的平均值
 
 - Write Data Timing: 在写数据的时候，ReadDqsTiming已经找到了。另外因为Memory没有DLL电路，所以只能通过调整CPU/Memory controller端的Write Data timing去配合DQS 信号使得DQS在DQ data eye的中间。具体的training过程如下：
 	- 对于Memory的每个channel的每个rank写一个cacheline的特定类型的数据。
-		- 然后读回数据并记录基于现在的Write Data timing的情况 PASS或者Fail。
-		- 增加Write Data Timing Delay,继续步骤a.直到找到最大可以pass的Write DQ Delay timing。
-		例如：
-		Read DQS Delay = x12h -> Write DQ Delays of （x07h -> x23h） pass
-	- 计算出他们的中点（平均值）并且设置相应的Write DQ Delay timing的值。这里的平均值是（0x7+0x23) / 2 = 0x15.
+	- 然后读回数据并记录基于现在的Write Data timing的情况 PASS或者Fail。
+	- 增加Write Data Timing Delay,继续步骤a.直到找到最大可以pass的Write DQ Delay timing。
+	- 计算出他们的中点（平均值）并且设置相应的Write DQ Delay timing的值。
 	![DQS](DQS.png)
 
 **Max Read Latency：**
