@@ -122,7 +122,7 @@ tDQSS（DQS, DQS# rising edge to CK, CK# rising edge，在标准中要求为+/-0
 **DQS Centering:**
 DQS Centering 分为 Read DQS Timing和 Write Data Timing两种，他们的目的是用来保证DQS的信号要在DQ data eye的中间。
 - Read DQS Timing: 通过在读数据的时候， CPU/Memory controller 通过调整内部的DLL延迟锁定回路电路，延迟DQS 使得它在DQ data eye的中间。具体的training过程是：
-	- 对于Memory的每个channel的每个rank写一个cacheline的特定类型的数据。将ReadDQSTiming 和Write Data Timing 都初始化为0x00。
+	- 对于Memory的每个channel的每个rank写一个cacheline的特定类型的数据。
 	- 然后读回数据并标记基于现在的ReadDQS timing的情况 PASS或者Fail。
 	- 增加ReadDQSTiming delay,继续步骤a.直到找到最大可以pass的ReadDQSTiming delay。
 	- 增加Write Data Timing delay,继续步骤1。当且仅当出现连续3组pass的情况，取中间的一组数据并记录ReadDqsTiming的平均值
@@ -133,13 +133,6 @@ DQS Centering 分为 Read DQS Timing和 Write Data Timing两种，他们的目�
 	- 增加Write Data Timing Delay,继续步骤a.直到找到最大可以pass的Write DQ Delay timing。
 	- 计算出他们的中点（平均值）并且设置相应的Write DQ Delay timing的值。
 	![DQS](DQS.png)
-
-**Max Read Latency：**
-它是用来告诉CPU/Memory Controler 什么时候可以读到来自于DRAM的数据。
-- 它会基于一些固定的内部延迟以及物理DDR的配置来计算。
-- 挑选一个ReadEnableDelay最大的DIMM。
-- 向该dimm写3个cacheline的数据。
-- 调整MaxRdLatency直到读测试PASS.
 
 Refer: 
 - [1. DDR工作原理](https://www.cnblogs.com/shengansong/archive/2012/09/01/2666213.html) 
