@@ -64,5 +64,9 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 
 参考： 
 	- [1. ACPI Spec](https://www.uefi.org/sites/default/files/resources/ACPI_6_2.pdf)
-	
+
 	- [2. Intel® Processor Vendor-Specific ACPI](https://www.intel.com/content/dam/www/public/us/en/documents/product-specifications/processor-vendor-specific-acpi-specification.pdf)
+
+	- [3. Cpu0Cst.asl](https://github.com/tianocore/edk2-platforms/blob/master/Silicon/Intel/Vlv2DeviceRefCodePkg/ValleyView2Soc/CPU/PowerManagement/AcpiTables/Ssdt/Cpu0Cst.asl)
+
+	- [4. CPU省电的秘密（二）：CStates](https://zhuanlan.zhihu.com/p/25675639)
