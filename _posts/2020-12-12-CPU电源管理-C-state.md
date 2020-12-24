@@ -13,7 +13,7 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 1.  _OSC & _PDC _0SC(Operating System Details) & _PDC(Processor Driver Capabilities)在功能上比较接近， 基本上供OSPM调用和BIOS传递一些关于C-state P-state T-state是否支持，以及支持的程度和实现方式的一些设定，BIOS可以依据OSPM的参数回报相应的ACPI Structures。
 2. ACPI定义多种C-state的控制接口，FADT P_BLK P_LVL2,P_LVL3, P_LVLx_LAT,以及_CST 。_CST会override FADT的一些设置。其中Register 表示OSPM调整C-State的方式；Type表示C State的类型（1=C1, 2=C2, 3=C3)；Latency表示进入该C-state的最大的延迟；Power表示在该C-state时的功耗（单位是毫瓦）。
 
-```c
+	```c
 	Package {
 	Count // Integer
 	CStates[0] // Package
@@ -27,8 +27,10 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 	Latency // Integer (WORD)
 	Power // Integer (DWORD)
 	}
-	
+	```	
 	进入C-state通常有通过1. 读IO的方式 2.通过mwait的方式 3.指令HLT(C1)。如下述的参考代码所示，该CPU支持2个C-state,其中C1使用FFixedHW的方式访问，C2都是通过读取IO地址0x414的方式进入C-state。
+
+	```c
 	Name(_CST, Package() 
 	{
 	2,      // There are four C-states defined here with three semantics
@@ -36,7 +38,8 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 	Package(4){Register(FFixedHW, 0x01, 0x02, 0x0000000000000000,0x01)),     0x01,  0x03, 0x000003e8}}), 
 	Package(4){Register(SystemIO, 0x08, 0x00, 0x0000000000000414, 0x01,)), 0x02, 0x0190, 0x00000000}})
 	})
-```	
+	```	
+	
 	FFixedHW看着挺奇怪的，它的全称是Functional Fixed Hardware (FFH),ASL code中的标识符是0x7F,当OSPM看到FFH的标识符时，它会使用MWAIT指令进入C-state，下图中的Arg0会放到EAX中作为参数传递给是MWAIT指令。MWAIT的实现相对于IO可能会更轻量和高效。
 
 	![FFH](FFH.png)
@@ -60,5 +63,5 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 ```
 
 参考： 
-	ACPI Spec https://www.uefi.org/sites/default/files/resources/ACPI_6_2.pdf
-	Intel® Processor Vendor-Specific ACPI https://www.intel.com/content/dam/www/public/us/en/documents/product-specifications/processor-vendor-specific-acpi-specification.pdf
+	- [1. ACPI Spec](https://www.uefi.org/sites/default/files/resources/ACPI_6_2.pdf)
+	- [2. Intel® Processor Vendor-Specific ACPI](https://www.intel.com/content/dam/www/public/us/en/documents/product-specifications/processor-vendor-specific-acpi-specification.pdf
