@@ -46,7 +46,7 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 
 3. _CSD C-state Dependency 用于向OSPM提供多个 logic processor之间C-state的依赖关系。比如在一个Dual Core的平台上，每颗核可以独立运行C1但是如果其中一个核切换到C2，另一个也必须要切换到C2，这时就需要在_CSD中提供这部分信息。其中NumEntries 表示_CSD这个package里面一共有多少项；Revision 表示版本号，目前都为0；Domain表示和这个CPU的C-State有依赖关系的CPU所属的域，通常是一个physical core上的两个logic core（thread）共属一个域。CoordType 表示是由OSPM负责协调有依赖关系的CPU的C-state的进出还是由硬件负责，0xFC (SW_ALL), 0xFD (SW_ANY) or 0xFE (HW_ALL)，这里通常都是设置为HW_ALL。
 
-```c	
+	```c	
 	Package {
 	NumEntries // Integer
 	Revision // Integer (BYTE)
@@ -60,7 +60,7 @@ BIOS 通过ACPI Table report 给OS当前支持的 C-State和实现的方式:
 	{
 	Package(6) {0x06, 0x00, 0x00000000, 0x000000FE, 0x00000002, 0x00000000}
 	})
-```
+	```
 
 参考： 
 	
