@@ -18,7 +18,7 @@ DMA重映射中最重要的概念就是地址的翻译。如下图所示，图�
 
 ![DDMSRT](DDMSRT.png)
 
-**DMA重映射(DMA Remapping)**
+**中断重映射(Interrupt Remapping)**
 
 IOMMU中断重映射单元让系统软件能够控制和集中处理外部的中断请求包括包括从I/O APIC发送出来的中断，以及设备,RP, RC产生的以MSI、MSI-X产生的中断（不包含中断重映射单元硬件本身产生的中断）。
 
