@@ -69,6 +69,6 @@ Extended-root-table和Root-table的起始地址同样是由Root Table Address Re
 参考:
 1. 《vt-directed-io-spec》
 2. 《A_Tour_Beyond_BIOS_Using_Intel_VT-d_for_DMA_Protection》
-3. Intel VT-d（2）- DMA重定向： Intel VT-d（2）- DMA重定向 - 知乎 (zhihu.com)
-4. VT-d DMA Remapping： VT-d DMA Remapping · kernelgo
-5. 手撕intel-iommu之DMA remapping（硬件篇）：手撕intel-iommu之DMA remapping（硬件篇） (nimisolo.github.io)
+3. Intel VT-d（2）- DMA重定向： https://zhuanlan.zhihu.com/p/50750665
+4. VT-d DMA Remapping： https://kernelgo.org/dma-remapping.html
+5. 手撕intel-iommu之DMA remapping（硬件篇: https://nimisolo.github.io/post/vtd-dma-remapping/
