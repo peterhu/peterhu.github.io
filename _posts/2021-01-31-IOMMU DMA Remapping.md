@@ -15,13 +15,14 @@ categories: [PCIe]
 ![HPC](HPC.png)
 
 VT-d spec定义了 5 张DMA Remapping Reporting (DMAR) ACPI table,对于DMA重映射，主要使用的是DRHD和RMRR这两张表格，这两张表中记录的设备的信息也是以B/D/F表示。
+
 1. DRHD: DMA Remapping Hardware Unit Definition 描述DMAR Unit(IOMMU)的基本信息,主要提供VT-d重定向硬件寄存器基地址,以及该IOMMU所管辖的硬件。
 
-![DRHD](DRHD.png)
+	![DRHD](DRHD.png)
 
 2. RMRR: Reserved Memory Region Reporting 描述保留的物理地址，该地址空间不被重映射。主要包含的是保留的内存的范围以及使用了这些保留内存的设备。
 
-![RMRR](RMRR.png)
+	![RMRR](RMRR.png)
 
 3. ATSR: Root Port ATS Capability 仅限于有Device-TLB的情形，Root Port需要向OS报告支持ATS的能力
 
