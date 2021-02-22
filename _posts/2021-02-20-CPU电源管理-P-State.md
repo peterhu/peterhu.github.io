@@ -53,5 +53,6 @@ NumProcessors :表示有多少个处理器，开启SMT为2，否则为1。
 ![PSD](PSD.png)
 
 参考： 
-	- [1. ACPI Spec](https://www.uefi.org/sites/default/files/resources/ACPI_6_2.pdf)
-	- [2. Cpu0Ist.asl](https://github.com/tianocore/edk2-platforms/blob/master/Silicon/Intel/Vlv2DeviceRefCodePkg/ValleyView2Soc/CPU/PowerManagement/AcpiTables/Ssdt/Cpu0Ist.asl)
+- [1. ACPI Spec](https://www.uefi.org/sites/default/files/resources/ACPI_6_2.pdf)
+
+- [2. Cpu0Ist.asl](https://github.com/tianocore/edk2-platforms/blob/master/Silicon/Intel/Vlv2DeviceRefCodePkg/ValleyView2Soc/CPU/PowerManagement/AcpiTables/Ssdt/Cpu0Ist.asl)
