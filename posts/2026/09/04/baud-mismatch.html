@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>波特率不匹配 → 采样错位 → 乱码</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px;
+    font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans SC", -apple-system, sans-serif;
+    background: #ffffff; color: #0f172a;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 700; color: #0f172a; }
+  .sub { font-size: 14px; color: #64748b; margin: 0 0 18px; }
+  svg { max-width: 920px; width: 100%; height: auto; display: block; }
+  .caption {
+    max-width: 900px; font-size: 14px; color: #475569; line-height: 1.8; margin-top: 14px;
+    border-left: 3px solid #cbd5e1; padding-left: 12px;
+  }
+  .caption b { color: #b91c1c; }
+  .caption .green { color: #16a34a; font-weight: 700; }
+</style>
+</head>
+<body>
+  <h1>波特率不匹配 → 采样错位 → 乱码</h1>
+  <p class="sub">别信声明，信测量 · 接收端采样点一点点滑进相邻 bit</p>
+
+  <svg id="scene" viewBox="0 0 920 322" xmlns="http://www.w3.org/2000/svg"></svg>
+
+  <p class="caption">
+    ① 是真实比特流 <b>1 0 1 1 0 1 0 0</b>；② 是接收端按<strong>错误波特率</strong>打的采样点（红）。
+    前几个采样点还落在各自格子里（<span class="green">绿</span>），越往后偏得越远，最后几个滑进相邻格子（红），读出来的就全乱了。
+    就像两个节拍器不同步，你按自己的拍子抄对方的舞步，越跳越乱。
+  </p>
+
+<script>
+(function () {
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var svg = document.getElementById('scene');
+
+  var bits = [1, 0, 1, 1, 0, 1, 0, 0];
+  var N = bits.length;
+  var x0 = 70, cellW = 96;
+  var EPS = 0.10, PHASE0 = 0.5;   // 接收端快 10%，初始相位居中
+
+  var L = {
+    band1: 28, bitLabel: 40, cellTop: 44, cellBot: 120, waveHi: 70, waveLo: 98,
+    band2: 150, tickTop: 164, tickBot: 216,
+    band3: 244, decoY: 260, decoH: 44
+  };
+
+  function el(tag, attrs, text) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+
+  // 三条 band 标签
+  svg.appendChild(el('text', {x: 10, y: L.band1, 'font-size': 15, fill: '#0f172a', 'font-weight': '600'},
+    '① 真实信号（TX）—— 每个格子一个 bit'));
+  svg.appendChild(el('text', {x: 10, y: L.band2, 'font-size': 15, fill: '#b91c1c', 'font-weight': '600'},
+    '② 接收端采样点 —— 波特率不符，逐渐右偏'));
+  svg.appendChild(el('text', {x: 10, y: L.band3, 'font-size': 15, fill: '#0f172a', 'font-weight': '600'},
+    '③ 解码结果 —— 错位的采样点读出错误的 bit'));
+
+  // 采样点位置 + 读结果（静态）
+  var pos = [], read = [], correct = [];
+  for (var k = 0; k < N; k++) {
+    var p = k * (1 + EPS) + PHASE0;
+    pos.push(x0 + p * cellW);
+    var cell = Math.floor(p);
+    var clamped = Math.max(0, Math.min(N - 1, cell));
+    read.push(bits[clamped]);
+    correct.push(cell === k);
+  }
+
+  // 单元格边界虚线（从 cell 顶部延伸到采样区底部，方便看"越过边界"）
+  for (var b = 0; b <= N; b++) {
+    var bx = x0 + b * cellW;
+    svg.appendChild(el('line', {
+      x1: bx, x2: bx, y1: L.cellTop, y2: L.tickBot,
+      stroke: '#cbd5e1', 'stroke-width': 1, 'stroke-dasharray': '3 4'
+    }));
+  }
+
+  // ① 单元格 + 方波 + bit 标签
+  for (var k2 = 0; k2 < N; k2++) {
+    var x = x0 + k2 * cellW;
+    svg.appendChild(el('rect', {
+      x: x, y: L.cellTop, width: cellW, height: L.cellBot - L.cellTop,
+      fill: bits[k2] ? '#dbeafe' : '#f1f5f9', stroke: '#cbd5e1'
+    }));
+    svg.appendChild(el('text', {
+      x: x + cellW / 2, y: L.bitLabel, 'text-anchor': 'middle',
+      'font-size': 17, fill: '#0f172a', 'font-weight': '700'
+    }, bits[k2]));
+    var yy = bits[k2] ? L.waveHi : L.waveLo;
+    svg.appendChild(el('line', {
+      x1: x + 2, x2: x + cellW - 2, y1: yy, y2: yy,
+      stroke: bits[k2] ? '#1d4ed8' : '#94a3b8', 'stroke-width': 4, 'stroke-linecap': 'round'
+    }));
+  }
+
+  // ② 采样点（红）+ ③ 解码结果框（动画更新）
+  var tickG = [], decoRect = [], decoText = [];
+  for (var k3 = 0; k3 < N; k3++) {
+    var g = el('g', {});
+    g.appendChild(el('line', {x1: pos[k3], x2: pos[k3], y1: L.tickTop, y2: L.tickBot,
+      stroke: '#dc2626', 'stroke-width': 2.5}));
+    g.appendChild(el('path', {
+      d: 'M ' + (pos[k3] - 6) + ' ' + L.tickBot + ' L ' + (pos[k3] + 6) + ' ' + L.tickBot +
+         ' L ' + pos[k3] + ' ' + (L.tickBot + 8) + ' Z', fill: '#dc2626'
+    }));
+    svg.appendChild(g);
+    tickG.push(g);
+
+    var ddx = x0 + k3 * cellW;
+    var r = el('rect', {x: ddx + 3, y: L.decoY, width: cellW - 6, height: L.decoH, rx: 6, fill: '#e2e8f0'});
+    var t = el('text', {x: ddx + cellW / 2, y: L.decoY + L.decoH / 2 + 6,
+      'text-anchor': 'middle', 'font-size': 18, 'font-weight': '700', fill: '#64748b'}, '·');
+    svg.appendChild(r); svg.appendChild(t);
+    decoRect.push(r); decoText.push(t);
+  }
+
+  // 动画：先从左到右逐个"揭示"采样结果，最后让错误的格子脉冲高亮
+  var CYCLE = 5200, REVEAL = 0.66;
+  function render(ts) {
+    var t = ts % CYCLE;
+    var p = (t < CYCLE * REVEAL) ? (t / (CYCLE * REVEAL)) * N : N;
+    for (var k4 = 0; k4 < N; k4++) {
+      var on = k4 < p;
+      tickG[k4].style.opacity = on ? '1' : '0.22';
+      if (on) {
+        decoRect[k4].setAttribute('fill', correct[k4] ? '#16a34a' : '#dc2626');
+        decoText[k4].setAttribute('fill', '#ffffff');
+        decoText[k4].textContent = read[k4];
+      } else {
+        decoRect[k4].setAttribute('fill', '#e2e8f0');
+        decoText[k4].setAttribute('fill', '#64748b');
+        decoText[k4].textContent = '·';
+      }
+    }
+    if (t >= CYCLE * REVEAL) {
+      var pulse = (Math.sin(((t - CYCLE * REVEAL) / 220) * Math.PI * 2) + 1) / 2;
+      for (var k5 = 0; k5 < N; k5++) {
+        if (!correct[k5]) decoRect[k5].setAttribute('opacity', 0.55 + 0.45 * pulse);
+      }
+    } else {
+      for (var k6 = 0; k6 < N; k6++) decoRect[k6].setAttribute('opacity', '1');
+    }
+    requestAnimationFrame(render);
+  }
+  requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
