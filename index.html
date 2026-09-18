@@ -1,31 +1,25 @@
 ---
 layout: page
-title: 首页
+title: Home
 ---
 <div class="page page-index">
-  {% for post in site.posts  -%}
-    {%- capture post_year %}{{ post.date | date: "%Y" }}{% endcapture -%}
-    {%- capture post_previous_year %}{{ post.previous.date | date: "%Y" }}{% endcapture -%}
-    {%- capture post_next_year %}{{ post.next.date | date: "%Y" }}{% endcapture -%}
-    {%- if forloop.first or post_next_year != post_year -%}
-    <div class="list-post">
-      <h2 id="{{post_year}}">{{post_year}}</h2>
-      <ul>
-    {%- endif %}
-        <li>
-          <span class="date">{{ post.date | date: "%Y/%m/%d" }}</span>
-          <div class="title">
-            <a href="{{ site.baseurl | append: post.url }}" class="hover-underline">{{ post.title }}</a>
-          </div>
-          <div class="categories">
-            {% for categorie in post.categories -%}
-            <a href="{{site.baseurl}}/pages/categories.html#{{ categorie }}" class="hover-underline">{{ categorie }}</a>
-            {%- endfor %}
-          </div>
-        </li>
-    {%- if forloop.last or post_previous_year != post_year %}
-      </ul>
-    </div>
-    {%- endif %}
-  {%- endfor %}
+  {% assign en_posts = site.posts | where_exp: "post", "post.lang != 'zh'" %}
+  <div class="list-post">
+    <ul>
+      {%- for post in en_posts %}
+      <li>
+        <span class="date">{{ post.date | date: "%Y/%m/%d" }}</span>
+        <div class="title">
+          <a href="{{ site.baseurl | append: post.url }}" class="hover-underline">{{ post.title }}</a>
+        </div>
+        <div class="categories">
+          {% for categorie in post.categories -%}
+          <a href="{{site.baseurl}}/pages/categories.html#{{ categorie }}" class="hover-underline">{{ categorie }}</a>
+          {%- endfor %}
+        </div>
+      </li>
+      {%- endfor %}
+    </ul>
+  </div>
+  <p style="margin-top:1.5em; color:#888;">Chinese posts (2020–2021) → <a href="{{ site.baseurl }}/pages/archive-zh.html" class="hover-underline">Archive</a></p>
 </div>
