@@ -1,6 +1,6 @@
 ---
 layout: mypost
-title: "Case File 0.1: Memory's Family Tree"
+title: "DRAM Detective · Case File 0.1: Memory's Family Tree"
 categories: [DDR5, Topology]
 lang: en
 ---
