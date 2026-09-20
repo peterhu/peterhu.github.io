@@ -4,25 +4,38 @@ title: Categories
 ---
 
 <div class="page page-categories">
+  {% assign en_posts = site.posts | where_exp: "post", "post.lang != 'zh'" %}
+  {% assign cat_list = "" | split: "" %}
+  {% for post in en_posts %}
+    {% for cat in post.categories %}
+      {% unless cat_list contains cat %}
+        {% assign cat_list = cat_list | push: cat %}
+      {% endunless %}
+    {% endfor %}
+  {% endfor %}
+
   <div class="list-category">
     <h2>All Categories</h2>
     <div>
-      {%- for category in site.categories %}
-      <a href="javascript:document.getElementById('{{ category[0] }}').scrollIntoView()">{{ category[0] }}</a>
+      {%- for cat in cat_list %}
+      <a href="javascript:document.getElementById('{{ cat }}').scrollIntoView()">{{ cat }}</a>
       {%- endfor %}
     </div>
   </div>
-  {%- for category in site.categories %}
+
+  {%- for cat in cat_list %}
   <div class="list-post">
-    <h2 id="{{ category[0] }}">{{ category[0] }}</h2>
+    <h2 id="{{ cat }}">{{ cat }}</h2>
     <ul>
-      {%- for post in category[1] %}
+      {%- for post in en_posts %}
+        {%- if post.categories contains cat %}
       <li>
         <span class="date">{{ post.date | date: "%Y/%m/%d" }}</span>
         <div class="title">
           <a href="{{ site.baseurl | append: post.url }}" class="hover-underline">{{ post.title }}</a>
         </div>
       </li>
+        {%- endif %}
       {%- endfor %}
     </ul>
   </div>

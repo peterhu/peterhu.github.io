@@ -35,7 +35,7 @@ menu:
     url: /pages/categories.html
   - title: Search
     url: /pages/search.html
-  - title: Archive (中文)
+  - title: Archive
     url: /pages/archive-zh.html
   - title: About
     url: /pages/about.html
