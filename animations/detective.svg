@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="DRAM Detective">
+  <!-- Inverness cape -->
+  <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+  <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+  <!-- neck -->
+  <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+  <!-- head -->
+  <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+  <!-- nose -->
+  <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+  <!-- eyes -->
+  <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+  <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+  <!-- eyebrows -->
+  <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+  <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+  <!-- deerstalker crown -->
+  <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+  <!-- deerstalker brim -->
+  <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+  <!-- hat band -->
+  <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+  <!-- ear flaps -->
+  <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+  <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+  <!-- magnifying glass -->
+  <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+</svg>
