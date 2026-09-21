@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — The DIMM's Power Substation</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --gold: #c9a34a;
+    --vdd: #5aa06a; --vddq: #5a8fd0; --vpp: #d0784a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 16px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 820px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 60px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 260px; }
+
+  /* DIMM + PMIC + rails */
+  .dimm { position: relative; width: 280px; height: 120px; margin: 8px auto; }
+  .dimm .pcb {
+    position: absolute; inset: 0; background: linear-gradient(180deg, #2c4a34, #1f3525);
+    border: 1px solid #4a6b52; border-radius: 6px;
+  }
+  .dimm .chip { position: absolute; width: 22px; height: 15px; background: #0e0e14; border: 1px solid #2a2a3a; border-radius: 2px; }
+  .dimm .pmic {
+    position: absolute; left: 122px; top: 46px; width: 36px; height: 26px;
+    background: var(--accent); border: 2px solid #fff; border-radius: 3px;
+    box-shadow: 0 0 0 2px var(--accent);
+    transition: box-shadow .3s ease;
+  }
+  .dimm .pmic-label { position: absolute; left: 50%; top: 74px; transform: translateX(-50%); font-size: 11px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+
+  /* the three rails: colored wires from PMIC to chips */
+  .rail { position: absolute; height: 4px; border-radius: 2px; opacity: 0; transform: scaleX(0); transform-origin: left center; transition: opacity .4s ease, transform .4s ease; }
+  .rail.on { opacity: 1; transform: scaleX(1); }
+  .rail-vdd  { background: var(--vdd);  left: 156px; top: 32px; width: 52px; }
+  .rail-vddq { background: var(--vddq); left: 156px; top: 48px; width: 52px; }
+  .rail-vpp  { background: var(--vpp);  left: 156px; top: 64px; width: 52px; }
+  .rail-in   { background: var(--gold); left: 66px; top: 56px; width: 56px; }
+
+  .rail-tag { position: absolute; font-size: 10px; font-weight: 700; opacity: 0; transition: opacity .3s ease; }
+  .rail-tag.on { opacity: 1; }
+
+  /* card: three rails + roles */
+  .card { flex: 0 0 210px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card .row {
+    display: flex; align-items: baseline; gap: 8px; padding: 7px 8px; border-radius: 6px;
+    opacity: .12; transform: translateX(-6px);
+    transition: opacity .3s ease, transform .3s ease, background .3s ease;
+  }
+  .card .row .k { font-size: 12px; color: var(--dim); width: 52px; flex: 0 0 52px; font-weight: 700; }
+  .card .row .v { font-size: 12px; font-weight: 600; }
+  .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
+  .card .row.vdd .k { color: var(--vdd); }
+  .card .row.vddq .k { color: var(--vddq); }
+  .card .row.vpp .k { color: var(--vpp); }
+
+  /* floor vs line */
+  .floor-wrap { max-width: 820px; width: 100%; margin-top: 18px; }
+  .floor-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .floor {
+    display: flex; height: 46px; border-radius: 8px; overflow: hidden;
+    border: 1px solid var(--line); background: #161623;
+    position: relative;
+  }
+  .tile { flex: 1; background: linear-gradient(180deg, #23233a, #1b1b2e); border-right: 1px solid #2c2c42; transition: transform .15s ease; }
+  .tile:last-child { border-right: none; }
+  .floor .eye-line {
+    position: absolute; left: 50%; top: 0; bottom: 0; width: 3px; background: var(--accent);
+    transform: translateX(-50%); opacity: 0; transition: opacity .3s ease;
+  }
+  .floor.shake-power .tile { animation: shakePower .5s ease-in-out infinite; }
+  .floor.shake-trace .tile.hot { animation: shakeTrace .5s ease-in-out infinite; }
+  .floor .eye-line.on { opacity: 1; }
+  .floor.shake-power .eye-line { animation: shakePower .5s ease-in-out infinite; }
+  .floor.shake-trace .eye-line { opacity: 1; }
+
+  @keyframes shakePower {
+    0%,100% { transform: translateY(0); }
+    25% { transform: translateY(3px); }
+    50% { transform: translateY(-3px); }
+    75% { transform: translateY(2px); }
+  }
+  @keyframes shakeTrace {
+    0%,100% { transform: translateY(0); }
+    25% { transform: translateY(6px); }
+    50% { transform: translateY(-6px); }
+    75% { transform: translateY(4px); }
+  }
+  .floor-caption { text-align: center; font-size: 12px; color: var(--dim); margin-top: 8px; min-height: 18px; }
+  .floor-caption b { color: var(--ink); }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 820px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective, .card { flex: none; width: 100%; }
+    .center { width: 100%; }
+    .dimm { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 0.3</div>
+    <h1>The DIMM's Power Substation</h1>
+    <div class="sub">5V goes in. Three rails come out. And training draws on the floor they make.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Let me check this DIMM's power…</div>
+    </div>
+
+    <div class="center">
+      <div class="dimm">
+        <div class="pcb"></div>
+        <div class="chip" style="left:16px; top:16px;"></div>
+        <div class="chip" style="left:44px; top:16px;"></div>
+        <div class="chip" style="left:16px; top:56px;"></div>
+        <div class="chip" style="left:44px; top:56px;"></div>
+        <div class="chip" style="left:210px; top:16px;"></div>
+        <div class="chip" style="left:238px; top:16px;"></div>
+        <div class="chip" style="left:210px; top:56px;"></div>
+        <div class="chip" style="left:238px; top:56px;"></div>
+        <div class="pmic" id="pmic"></div>
+        <div class="pmic-label">PMIC</div>
+        <div class="rail rail-in" id="railIn"></div>
+        <div class="rail rail-vdd" id="railVdd"></div>
+        <div class="rail rail-vddq" id="railVddq"></div>
+        <div class="rail rail-vpp" id="railVpp"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Three rails, three jobs</div>
+      <div class="row vdd" data-i="0"><span class="k">VDD</span><span class="v">the room lights</span></div>
+      <div class="row vddq" data-i="1"><span class="k">VDDQ</span><span class="v">the elevator</span></div>
+      <div class="row vpp" data-i="2"><span class="k">VPP</span><span class="v">the water pump</span></div>
+    </div>
+  </div>
+
+  <div class="floor-wrap">
+    <div class="floor-label">The power "floor" that training draws on</div>
+    <div class="floor" id="floor">
+      <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+      <div class="tile"></div><div class="tile"></div><div class="tile"></div><div class="tile"></div>
+      <div class="eye-line" id="eyeLine"></div>
+    </div>
+    <div class="floor-caption" id="floorCaption">The sampling point — the line training draws.</div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Power is the floor, training is the line.<br>A shaking floor ruins even the straightest line.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays · click a rail to jump</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elPmic   = document.getElementById('pmic');
+  var elRailIn = document.getElementById('railIn');
+  var elRailVdd = document.getElementById('railVdd');
+  var elRailVddq = document.getElementById('railVddq');
+  var elRailVpp = document.getElementById('railVpp');
+  var rows = document.querySelectorAll('.card .row');
+  var elFloor = document.getElementById('floor');
+  var elEyeLine = document.getElementById('eyeLine');
+  var elFloorCaption = document.getElementById('floorCaption');
+  var elGolden = document.getElementById('golden');
+  var elDet = document.getElementById('det');
+
+  // steps: 0..6 (0 intro, 1 in, 2 rails, 3 labels, 4 floor+line, 5 power shake, 6 trace shake, 7 golden)
+  var STEP_MS = 1700;
+  var idx = -1;
+  var timer = null;
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(7, n));
+    if (timer) clearTimeout(timer);
+
+    // reset
+    elRailIn.classList.toggle('on', idx >= 1);
+    elRailVdd.classList.toggle('on', idx >= 2);
+    elRailVddq.classList.toggle('on', idx >= 2);
+    elRailVpp.classList.toggle('on', idx >= 2);
+    rows.forEach(function (r, i) { r.classList.toggle('on', idx >= 3 && i <= idx - 3); });
+    elEyeLine.classList.toggle('on', idx >= 4);
+    elFloor.classList.toggle('shake-power', idx === 5);
+    elFloor.classList.toggle('shake-trace', idx === 6);
+    elFloor.classList.toggle('shake-power', idx === 5);
+    if (idx === 6) {
+      var tiles = elFloor.querySelectorAll('.tile');
+      tiles.forEach(function (t, i) { t.classList.toggle('hot', i === 4); });
+    } else {
+      elFloor.querySelectorAll('.tile').forEach(function (t) { t.classList.remove('hot'); });
+    }
+    elGolden.classList.toggle('show', idx === 7);
+    elDet.style.transform = idx >= 4 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    var bubble = '';
+    switch (idx) {
+      case -1: bubble = 'Let me check this DIMM\'s power…'; break;
+      case 0:  bubble = 'Every DIMM carries its own <b>power substation</b> — the PMIC.'; break;
+      case 1:  bubble = 'The board sends one <b>5V</b> feed and walks away.'; break;
+      case 2:  bubble = 'The PMIC splits it into <b>three rails</b>…'; break;
+      case 3:  bubble = '<b>VDD</b> = the lights, <b>VDDQ</b> = the elevator, <b>VPP</b> = the pump.'; break;
+      case 4:  bubble = 'Training draws a <b>line</b> on this power floor.'; break;
+      case 5:  bubble = 'Power problem: the <b>whole floor shakes</b> — every lane at once.'; break;
+      case 6:  bubble = 'Trace problem: just <b>one tile</b> is loose — one lane.'; break;
+      case 7:  bubble = 'Check the floor before you redraw the line.'; break;
+    }
+    elBubble.innerHTML = bubble;
+
+    if (idx === 5) {
+      elFloorCaption.innerHTML = 'Power = <b>global + random</b>: the whole plane wobbles.';
+    } else if (idx === 6) {
+      elFloorCaption.innerHTML = 'Trace = <b>local + fixed</b>: one lane wobbles, same one every time.';
+    } else if (idx >= 4) {
+      elFloorCaption.innerHTML = 'The sampling point — the line training draws.';
+    } else {
+      elFloorCaption.innerHTML = 'The sampling point — the line training draws.';
+    }
+
+    if (idx < 7) timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+  }
+
+  rows.forEach(function (r, i) { r.addEventListener('click', function () { go(i + 3); }); });
+  document.getElementById('replay').addEventListener('click', function () { go(-1); setTimeout(function(){ go(0); }, 300); });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>

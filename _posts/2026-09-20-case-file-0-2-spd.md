@@ -33,7 +33,7 @@ Think of an old telephone keypad: one wire, each key strings in a different resi
 | Bytes 512–513 | Vendor ID (JEP106) | 0x80CE = Samsung |
 | Bytes 521–550 | Part number (ASCII) | M321R4GA0BB0-CQK |
 
-<iframe src="/animations/spd-id-card.html" width="100%" height="520" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="SPD ID card animation"></iframe>
+<iframe src="/animations/spd-id-card.html" width="100%" height="620" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="SPD ID card animation"></iframe>
 <p style="text-align: center; color: #888; font-size: 13px; margin-top: 6px;">Auto-plays · <a href="/animations/spd-id-card.html">open full screen ↗</a></p>
 
 A few spots that bite — I fell into every one of them (JESD400-5B):

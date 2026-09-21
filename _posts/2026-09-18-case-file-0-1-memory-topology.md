@@ -18,7 +18,7 @@ CPU
                      └── Rank
 ```
 
-<iframe src="/animations/topology-map.html" width="100%" height="740" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="Memory topology interactive map"></iframe>
+<iframe src="/animations/topology-map.html" width="100%" height="820" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="Memory topology interactive map"></iframe>
 <p style="text-align: center; color: #888; font-size: 13px; margin-top: 6px;">Auto-plays top to bottom · <a href="/animations/topology-map.html">open full screen ↗</a></p>
 
 **IMC** — the memory controller, the part of the CPU that actually talks to memory. It issues commands, decodes addresses, runs the training. A server CPU has several IMCs, each minding its own channels.
