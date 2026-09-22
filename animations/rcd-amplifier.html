@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — The Conductor's Amplifier</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --gold: #c9a34a;
+    --ca: #e0a34b; --dq: #5a8fd0; --ck: #b09a6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 16px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 820px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 62px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 280px; }
+
+  .dimm { position: relative; width: 320px; height: 130px; margin: 8px auto; }
+  .dimm .pcb {
+    position: absolute; inset: 0; background: linear-gradient(180deg, #2c4a34, #1f3525);
+    border: 1px solid #4a6b52; border-radius: 6px;
+  }
+  .dimm .chip { position: absolute; width: 20px; height: 14px; background: #0e0e14; border: 1px solid #2a2a3a; border-radius: 2px; }
+  .dimm .rcd {
+    position: absolute; left: 140px; top: 48px; width: 40px; height: 30px;
+    background: var(--accent); border: 2px solid #fff; border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--accent); transition: box-shadow .3s ease;
+  }
+  .dimm .rcd-label { position: absolute; left: 50%; top: 82px; transform: translateX(-50%); font-size: 11px; color: var(--accent); font-weight: 700; white-space: nowrap; }
+  .dimm .amp-icon { position: absolute; left: 50%; top: -14px; transform: translateX(-50%); font-size: 16px; opacity: 0; transition: opacity .3s ease; }
+
+  /* wires */
+  .wire { position: absolute; height: 4px; border-radius: 2px; opacity: 0; transform: scaleX(0); transform-origin: left center; transition: opacity .4s ease, transform .4s ease; }
+  .wire.on { opacity: 1; transform: scaleX(1); }
+  .ca-in  { background: var(--ca); left: 16px; top: 58px; width: 124px; }
+  .ca-fan { background: var(--ca); left: 180px; top: 34px; width: 60px; }
+  .ca-fan2{ background: var(--ca); left: 180px; top: 58px; width: 60px; }
+  .ca-fan3{ background: var(--ca); left: 180px; top: 82px; width: 60px; }
+  .dq-d   { background: var(--dq); left: 16px; top: 100px; width: 120px; }
+  .dq-fan { background: var(--dq); left: 16px; top: 100px; width: 160px; }
+
+  .wire-tag { position: absolute; font-size: 10px; font-weight: 700; opacity: 0; transition: opacity .3s ease; }
+  .wire-tag.on { opacity: 1; }
+
+  /* doorbell (DQS) */
+  .bell { position: absolute; font-size: 14px; opacity: 0; transition: opacity .3s ease; }
+  .bell.on { opacity: 1; animation: ring .7s ease-in-out infinite; }
+  @keyframes ring { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+
+  .card { flex: 0 0 220px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card .row {
+    display: flex; align-items: baseline; gap: 8px; padding: 8px 8px; border-radius: 6px;
+    opacity: .12; transform: translateX(-6px);
+    transition: opacity .3s ease, transform .3s ease, background .3s ease;
+  }
+  .card .row .k { font-size: 12px; color: var(--dim); width: 46px; flex: 0 0 46px; font-weight: 700; }
+  .card .row .v { font-size: 12px; font-weight: 600; }
+  .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
+  .card .row.ca .k { color: var(--ca); }
+  .card .row.dq .k { color: var(--dq); }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 820px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective, .card { flex: none; width: 100%; }
+    .center { width: 100%; }
+    .dimm { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 0.4</div>
+    <h1>The Conductor's Amplifier</h1>
+    <div class="sub">Commands go through the amplifier. Data goes straight.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Let me trace the command path on this DIMM…</div>
+    </div>
+
+    <div class="center">
+      <div class="dimm">
+        <div class="pcb"></div>
+        <div class="chip" style="left:240px; top:16px;"></div>
+        <div class="chip" style="left:266px; top:16px;"></div>
+        <div class="chip" style="left:292px; top:16px;"></div>
+        <div class="chip" style="left:240px; top:62px;"></div>
+        <div class="chip" style="left:266px; top:62px;"></div>
+        <div class="chip" style="left:292px; top:62px;"></div>
+        <div class="chip" style="left:240px; top:108px;"></div>
+        <div class="chip" style="left:266px; top:108px;"></div>
+        <div class="chip" style="left:292px; top:108px;"></div>
+        <div class="rcd" id="rcd"></div>
+        <div class="rcd-label">RCD</div>
+        <div class="amp-icon" id="ampIcon">📢</div>
+        <div class="wire ca-in" id="caIn"></div>
+        <div class="wire ca-fan" id="caFan1"></div>
+        <div class="wire ca-fan2" id="caFan2"></div>
+        <div class="wire ca-fan3" id="caFan3"></div>
+        <div class="wire dq-d" id="dqDirect"></div>
+        <div class="bell" id="bell" style="left:110px; top:86px;">🔔</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Two paths, two rules</div>
+      <div class="row ca" data-i="0"><span class="k">CA + CK</span><span class="v">through the amplifier (RCD)</span></div>
+      <div class="row dq" data-i="1"><span class="k">DQ + DQS</span><span class="v">straight to the DRAM</span></div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Commands go through the amplifier,<br>data goes straight. A missed command = no boot.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays · click a path to jump</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elRcd    = document.getElementById('rcd');
+  var elAmp    = document.getElementById('ampIcon');
+  var elCaIn   = document.getElementById('caIn');
+  var elCaF1   = document.getElementById('caFan1');
+  var elCaF2   = document.getElementById('caFan2');
+  var elCaF3   = document.getElementById('caFan3');
+  var elDq     = document.getElementById('dqDirect');
+  var elBell   = document.getElementById('bell');
+  var rows = document.querySelectorAll('.card .row');
+  var elGolden = document.getElementById('golden');
+  var elDet = document.getElementById('det');
+
+  var STEP_MS = 1800;
+  var idx = -1;  // 0 intro/amplifier, 1 CA path, 2 DQ path, 3 doorbell, 4 golden
+  var timer = null;
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(4, n));
+    if (timer) clearTimeout(timer);
+
+    elRcd.style.boxShadow = idx >= 0 ? '0 0 0 2px var(--accent), 0 0 18px rgba(224,163,75,.7)' : '0 0 0 2px var(--accent)';
+    elAmp.classList.toggle('on', idx >= 0);
+    elCaIn.classList.toggle('on', idx >= 1);
+    elCaF1.classList.toggle('on', idx >= 1);
+    elCaF2.classList.toggle('on', idx >= 1);
+    elCaF3.classList.toggle('on', idx >= 1);
+    elDq.classList.toggle('on', idx >= 2);
+    elBell.classList.toggle('on', idx === 3);
+    rows.forEach(function (r, i) { r.classList.toggle('on', i <= idx - 1 && idx >= 1); });
+    elGolden.classList.toggle('show', idx === 4);
+    elDet.style.transform = idx >= 1 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    var bubble = '';
+    switch (idx) {
+      case -1: bubble = 'Let me trace the command path on this DIMM…'; break;
+      case 0:  bubble = 'Every RDIMM carries an <b>RCD</b> — the conductor\'s amplifier.'; break;
+      case 1:  bubble = 'Commands (CA + CK) go <b>through the RCD</b>, then fan out to every die.'; break;
+      case 2:  bubble = 'Data (DQ) goes <b>straight</b> to the dies — no amplifier.'; break;
+      case 3:  bubble = 'Data has a <b>doorbell</b> (DQS) riding along. Commands don\'t — just the global clock.'; break;
+      case 4:  bubble = 'A missed command means nobody starts. Check the amplifier first.'; break;
+    }
+    elBubble.innerHTML = bubble;
+
+    if (idx < 4) timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+  }
+
+  rows.forEach(function (r, i) { r.addEventListener('click', function () { go(i + 1); }); });
+  document.getElementById('replay').addEventListener('click', function () { go(-1); setTimeout(function(){ go(0); }, 300); });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
