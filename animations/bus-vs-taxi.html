@@ -21,7 +21,7 @@
   .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
   .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
 
-  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 880px; width: 100%; }
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 900px; width: 100%; }
 
   .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
   .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
@@ -37,30 +37,30 @@
   .lane { position: relative; height: 118px; margin: 0 0 12px; }
   .lane-label { font-size: 11px; color: var(--dim); margin-bottom: 4px; letter-spacing: .5px; }
   .lane-label b { color: var(--ink); }
-  .road { position: absolute; left: 30px; right: 10px; top: 54px; height: 4px; border-radius: 2px; opacity: .15; transition: opacity .4s ease; }
+  .road { position: absolute; left: 30px; right: 10px; top: 68px; height: 4px; border-radius: 2px; opacity: .15; transition: opacity .4s ease; }
   .road.busroad { background: var(--bus); }
   .road.taxiroad { background: var(--taxi); }
   .lane.on .road { opacity: .8; }
 
-  .host { position: absolute; left: 22px; top: 34px; font-size: 9px; color: var(--dim); font-weight: 700; letter-spacing: 1px; }
-  .die { position: absolute; width: 16px; height: 12px; background: #0e0e14; border: 1px solid #2a2a3a; border-radius: 2px; top: 50px; }
+  .host { position: absolute; left: 22px; top: 44px; font-size: 9px; color: var(--dim); font-weight: 700; letter-spacing: 1px; }
+  .die { position: absolute; width: 16px; height: 12px; background: #0e0e14; border: 1px solid #2a2a3a; border-radius: 2px; top: 64px; }
   .bell { position: absolute; font-size: 13px; opacity: 0; transition: opacity .3s ease; }
   .bell.on { opacity: 1; animation: ring .6s ease-in-out infinite; }
   @keyframes ring { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
 
-  .bus, .taxi { position: absolute; font-size: 26px; opacity: 0; transition: left .7s ease, opacity .3s ease; z-index: 2; }
-  .bus { top: 20px; }
-  .taxi { top: 18px; }
+  .bus, .taxi { position: absolute; font-size: 26px; opacity: 0; transition: left .7s ease, opacity .3s ease; z-index: 2; line-height: 1; }
+  .bus { top: 32px; }
+  .taxi { top: 30px; }
 
-  .card { flex: 0 0 244px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card { flex: 0 0 252px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
   .card .row {
-    display: flex; align-items: baseline; gap: 8px; padding: 8px; border-radius: 6px;
+    display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 6px;
     opacity: .12; transform: translateX(-6px);
     transition: opacity .3s ease, transform .3s ease, background .3s ease;
   }
-  .card .row .k { font-size: 12px; color: var(--dim); width: 46px; flex: 0 0 46px; font-weight: 700; }
-  .card .row .v { font-size: 12px; font-weight: 600; }
+  .card .row .k { font-size: 12px; color: var(--dim); width: 42px; flex: 0 0 42px; font-weight: 700; line-height: 1.4; }
+  .card .row .v { font-size: 12px; font-weight: 600; flex: 1 1 auto; line-height: 1.4; overflow-wrap: break-word; }
   .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
   .card .row.bus .k { color: var(--bus); }
   .card .row.taxi .k { color: var(--taxi); }
@@ -68,7 +68,7 @@
   .golden {
     margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
     border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
-    text-align: center; max-width: 880px; width: 100%;
+    text-align: center; max-width: 900px; width: 100%;
     opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
   }
   .golden.show { opacity: 1; transform: translateY(0); }
@@ -130,10 +130,10 @@
         <div class="die" style="left:240px;"></div>
         <div class="die" style="left:330px;"></div>
         <div class="die" style="left:420px;"></div>
-        <div class="bell" id="bell0" style="left:152px; top:22px;">🔔</div>
-        <div class="bell" id="bell1" style="left:242px; top:22px;">🔔</div>
-        <div class="bell" id="bell2" style="left:332px; top:22px;">🔔</div>
-        <div class="bell" id="bell3" style="left:422px; top:22px;">🔔</div>
+        <div class="bell" id="bell0" style="left:152px; top:6px;">🔔</div>
+        <div class="bell" id="bell1" style="left:242px; top:6px;">🔔</div>
+        <div class="bell" id="bell2" style="left:332px; top:6px;">🔔</div>
+        <div class="bell" id="bell3" style="left:422px; top:6px;">🔔</div>
         <div class="bus" id="bus" style="left:52px;">🚌</div>
       </div>
 
@@ -142,7 +142,7 @@
         <div class="road taxiroad" id="taxiRoad"></div>
         <div class="host">HOST</div>
         <div class="die" style="left:330px;"></div>
-        <div class="bell" id="taxiBell" style="left:332px; top:22px;">🔔</div>
+        <div class="bell" id="taxiBell" style="left:332px; top:6px;">🔔</div>
         <div class="taxi" id="taxi" style="left:52px;">🚕</div>
       </div>
     </div>
@@ -177,6 +177,7 @@
   var elGolden = document.getElementById('golden');
 
   var stops = [150, 240, 330, 420];
+  var STEP_MS = 1800;
   var idx = -1;   // 0 intro, 1 bus (drive), 2 taxi, 3 contrast, 4 golden
   var timer = null;
   var driveTimer = null;
@@ -186,7 +187,7 @@
   function driveBus(i) {
     if (i >= stops.length) {
       elBubble.innerHTML = 'The bus stops at <b>every die</b> — the first hears the bell first, the last hears it last. That gap is the flight-time skew.';
-      driveTimer = setTimeout(function () { go(2); }, 1400);
+      driveTimer = setTimeout(function () { go(2); }, 1600);
       return;
     }
     elBus.style.left = stops[i] + 'px';
@@ -231,6 +232,8 @@
     if (idx === 1) {
       elBubble.innerHTML = 'Watch the bus: it stops at <b>every die</b>, one after another…';
       driveBus(0);
+    } else if (idx >= 0 && idx < 4) {
+      timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
     }
   }
 
