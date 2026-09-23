@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — The Bus and the Taxi</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --bus: #e0a34b; --taxi: #5a8fd0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 14px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 880px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 62px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 300px; }
+
+  .lane { position: relative; height: 118px; margin: 0 0 12px; }
+  .lane-label { font-size: 11px; color: var(--dim); margin-bottom: 4px; letter-spacing: .5px; }
+  .lane-label b { color: var(--ink); }
+  .road { position: absolute; left: 30px; right: 10px; top: 54px; height: 4px; border-radius: 2px; opacity: .15; transition: opacity .4s ease; }
+  .road.busroad { background: var(--bus); }
+  .road.taxiroad { background: var(--taxi); }
+  .lane.on .road { opacity: .8; }
+
+  .host { position: absolute; left: 22px; top: 34px; font-size: 9px; color: var(--dim); font-weight: 700; letter-spacing: 1px; }
+  .die { position: absolute; width: 16px; height: 12px; background: #0e0e14; border: 1px solid #2a2a3a; border-radius: 2px; top: 50px; }
+  .bell { position: absolute; font-size: 13px; opacity: 0; transition: opacity .3s ease; }
+  .bell.on { opacity: 1; animation: ring .6s ease-in-out infinite; }
+  @keyframes ring { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-15deg); } 75% { transform: rotate(15deg); } }
+
+  .bus, .taxi { position: absolute; font-size: 26px; opacity: 0; transition: left .7s ease, opacity .3s ease; z-index: 2; }
+  .bus { top: 20px; }
+  .taxi { top: 18px; }
+
+  .card { flex: 0 0 244px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card .row {
+    display: flex; align-items: baseline; gap: 8px; padding: 8px; border-radius: 6px;
+    opacity: .12; transform: translateX(-6px);
+    transition: opacity .3s ease, transform .3s ease, background .3s ease;
+  }
+  .card .row .k { font-size: 12px; color: var(--dim); width: 46px; flex: 0 0 46px; font-weight: 700; }
+  .card .row .v { font-size: 12px; font-weight: 600; }
+  .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
+  .card .row.bus .k { color: var(--bus); }
+  .card .row.taxi .k { color: var(--taxi); }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 880px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective, .card { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 0.5</div>
+    <h1>The Bus and the Taxi</h1>
+    <div class="sub">The clock rides the bus, data takes the taxi.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Let me follow the two roads on this DIMM…</div>
+    </div>
+
+    <div class="center">
+      <div class="lane" id="busLane">
+        <div class="lane-label"><b>CK / CA</b> — the bus · fly-by</div>
+        <div class="road busroad" id="busRoad"></div>
+        <div class="host">HOST</div>
+        <div class="die" style="left:150px;"></div>
+        <div class="die" style="left:240px;"></div>
+        <div class="die" style="left:330px;"></div>
+        <div class="die" style="left:420px;"></div>
+        <div class="bell" id="bell0" style="left:152px; top:22px;">🔔</div>
+        <div class="bell" id="bell1" style="left:242px; top:22px;">🔔</div>
+        <div class="bell" id="bell2" style="left:332px; top:22px;">🔔</div>
+        <div class="bell" id="bell3" style="left:422px; top:22px;">🔔</div>
+        <div class="bus" id="bus" style="left:52px;">🚌</div>
+      </div>
+
+      <div class="lane" id="taxiLane">
+        <div class="lane-label"><b>DQ / DQS</b> — the taxi · point-to-point</div>
+        <div class="road taxiroad" id="taxiRoad"></div>
+        <div class="host">HOST</div>
+        <div class="die" style="left:330px;"></div>
+        <div class="bell" id="taxiBell" style="left:332px; top:22px;">🔔</div>
+        <div class="taxi" id="taxi" style="left:52px;">🚕</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Two roads, two fates</div>
+      <div class="row bus" data-i="0"><span class="k">Bus</span><span class="v">fly-by — stops at every die, late &amp; uneven</span></div>
+      <div class="row taxi" data-i="1"><span class="k">Taxi</span><span class="v">point-to-point — door to door, on time</span></div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">The clock rides the bus, data takes the taxi.<br>The bus never stops on time — so you set the watch, stop by stop.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays · click a row to jump</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elDet = document.getElementById('det');
+  var elBusLane = document.getElementById('busLane');
+  var elTaxiLane = document.getElementById('taxiLane');
+  var elBus = document.getElementById('bus');
+  var elTaxi = document.getElementById('taxi');
+  var bells = [document.getElementById('bell0'), document.getElementById('bell1'),
+               document.getElementById('bell2'), document.getElementById('bell3')];
+  var elTaxiBell = document.getElementById('taxiBell');
+  var rows = document.querySelectorAll('.card .row');
+  var elGolden = document.getElementById('golden');
+
+  var stops = [150, 240, 330, 420];
+  var idx = -1;   // 0 intro, 1 bus (drive), 2 taxi, 3 contrast, 4 golden
+  var timer = null;
+  var driveTimer = null;
+
+  function clearDrive() { if (driveTimer) { clearTimeout(driveTimer); driveTimer = null; } }
+
+  function driveBus(i) {
+    if (i >= stops.length) {
+      elBubble.innerHTML = 'The bus stops at <b>every die</b> — the first hears the bell first, the last hears it last. That gap is the flight-time skew.';
+      driveTimer = setTimeout(function () { go(2); }, 1400);
+      return;
+    }
+    elBus.style.left = stops[i] + 'px';
+    bells[i].classList.add('on');
+    driveTimer = setTimeout(function () { driveBus(i + 1); }, 620);
+  }
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(4, n));
+    if (timer) clearTimeout(timer);
+    clearDrive();
+
+    elBusLane.classList.toggle('on', idx >= 1);
+    elTaxiLane.classList.toggle('on', idx >= 2);
+    elBus.style.opacity = idx >= 1 ? '1' : '0';
+    elTaxi.style.opacity = idx >= 2 ? '1' : '0';
+
+    if (idx < 1) {
+      elBus.style.left = '52px';
+      bells.forEach(function (b) { b.classList.remove('on'); });
+    }
+    if (idx < 2) {
+      elTaxi.style.left = '52px';
+      elTaxiBell.classList.remove('on');
+    }
+
+    rows.forEach(function (r, i) { r.classList.toggle('on', i <= idx - 3 && idx >= 3); });
+    elGolden.classList.toggle('show', idx === 4);
+    elDet.style.transform = idx >= 1 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    var bubble = '';
+    switch (idx) {
+      case -1: bubble = 'Let me follow the two roads on this DIMM…'; break;
+      case 0:  bubble = 'Two signals, two roads: commands take the <b>bus</b>, data takes a <b>taxi</b>.'; break;
+      case 1:  bubble = ''; break; // driven by driveBus
+      case 2:  bubble = 'The taxi goes <b>straight</b> to its die — the doorbell (DQS) rides along, on time.'; break;
+      case 3:  bubble = 'The bus is late and uneven at every stop. The taxi is door-to-door and on time.'; break;
+      case 4:  bubble = 'The bus never stops on time — so training sets the watch, stop by stop.'; break;
+    }
+    if (idx !== 1) elBubble.innerHTML = bubble;
+
+    if (idx === 1) {
+      elBubble.innerHTML = 'Watch the bus: it stops at <b>every die</b>, one after another…';
+      driveBus(0);
+    }
+  }
+
+  rows.forEach(function (r, i) { r.addEventListener('click', function () { go(i + 3); }); });
+  document.getElementById('replay').addEventListener('click', function () { go(-1); setTimeout(function(){ go(0); }, 300); });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
