@@ -212,6 +212,12 @@
     if (idx < 2) {
       elTaxi.style.left = '52px';
       elTaxiBell.classList.remove('on');
+    } else if (idx === 2) {
+      elTaxi.style.left = '52px';
+      setTimeout(function () {
+        elTaxi.style.left = '330px';
+        setTimeout(function () { elTaxiBell.classList.add('on'); }, 720);
+      }, 200);
     }
 
     rows.forEach(function (r, i) { r.classList.toggle('on', i <= idx - 3 && idx >= 3); });
