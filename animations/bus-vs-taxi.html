@@ -55,12 +55,12 @@
   .card { flex: 0 0 252px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
   .card .row {
-    display: flex; align-items: flex-start; gap: 8px; padding: 8px; border-radius: 6px;
+    padding: 8px; border-radius: 6px; margin-bottom: 6px;
     opacity: .12; transform: translateX(-6px);
     transition: opacity .3s ease, transform .3s ease, background .3s ease;
   }
-  .card .row .k { font-size: 12px; color: var(--dim); width: 42px; flex: 0 0 42px; font-weight: 700; line-height: 1.4; }
-  .card .row .v { font-size: 12px; font-weight: 600; flex: 1 1 auto; line-height: 1.4; overflow-wrap: break-word; }
+  .card .row .k { font-size: 12px; color: var(--dim); font-weight: 700; line-height: 1.4; margin-bottom: 2px; }
+  .card .row .v { font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: break-word; }
   .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
   .card .row.bus .k { color: var(--bus); }
   .card .row.taxi .k { color: var(--taxi); }
@@ -149,8 +149,8 @@
 
     <div class="card">
       <div class="card-title">Two roads, two fates</div>
-      <div class="row bus" data-i="0"><span class="k">Bus</span><span class="v">fly-by — stops at every die, late &amp; uneven</span></div>
-      <div class="row taxi" data-i="1"><span class="k">Taxi</span><span class="v">point-to-point — door to door, on time</span></div>
+      <div class="row bus" data-i="0"><div class="k">Bus</div><div class="v">fly-by — stops at every die, late &amp; uneven</div></div>
+      <div class="row taxi" data-i="1"><div class="k">Taxi</div><div class="v">point-to-point — door to door, on time</div></div>
     </div>
   </div>
 
