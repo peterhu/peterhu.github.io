@@ -55,13 +55,12 @@
   .card { flex: 0 0 252px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .card .card-title { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
   .card .row {
-    padding: 8px; border-radius: 6px; margin-bottom: 6px;
-    opacity: .12; transform: translateX(-6px);
-    transition: opacity .3s ease, transform .3s ease, background .3s ease;
+    display: block; padding: 10px 8px; border-radius: 6px; margin-bottom: 8px;
+    opacity: .15; transition: opacity .3s ease, background .3s ease;
   }
-  .card .row .k { font-size: 12px; color: var(--dim); font-weight: 700; line-height: 1.4; margin-bottom: 2px; }
-  .card .row .v { font-size: 12px; font-weight: 600; line-height: 1.4; overflow-wrap: break-word; }
-  .card .row.on { opacity: 1; transform: translateX(0); background: rgba(224,163,75,.08); }
+  .card .row .k { display: block; font-size: 12px; color: var(--dim); font-weight: 700; line-height: 1.5; margin-bottom: 3px; }
+  .card .row .v { display: block; font-size: 12px; font-weight: 600; line-height: 1.5; overflow-wrap: break-word; }
+  .card .row.on { opacity: 1; background: rgba(224,163,75,.08); }
   .card .row.bus .k { color: var(--bus); }
   .card .row.taxi .k { color: var(--taxi); }
 
