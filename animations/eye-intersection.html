@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — The Eye Width Intersection</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --read: #5a8fd0; --warn: #c0554f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 14px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 880px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 62px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 300px; }
+
+  .axis-label { font-size: 11px; color: var(--dim); margin-bottom: 6px; letter-spacing: .5px; }
+  .soldier { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .soldier .name { flex: 0 0 78px; font-size: 13px; font-weight: 600; }
+  .soldier .name b { color: var(--read); }
+  .track { flex: 1 1 auto; height: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; position: relative; overflow: hidden; }
+  .bar { position: absolute; top: 0; height: 100%; border-radius: 3px; opacity: 0; transition: opacity .4s ease; }
+  .bar.on { opacity: 1; }
+  .bar.a { left: 15%; width: 65%; background: rgba(90,143,208,.45); }
+  .bar.b { left: 30%; width: 25%; background: rgba(192,85,79,.55); }
+  .bar.c { left: 10%; width: 40%; background: rgba(224,163,75,.45); }
+  .intersect { position: absolute; top: 3px; height: calc(100% - 6px); left: 30%; width: 20%; background: #5fae6a; border-radius: 3px; opacity: 0; transition: opacity .5s ease; z-index: 2; }
+  .intersect.on { opacity: 1; }
+  .legend { font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .legend span { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 3px; vertical-align: -1px; }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 880px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.1</div>
+    <h1>The Eye Width Intersection</h1>
+    <div class="sub">The whole army hears at once — or it doesn't.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Let me check each soldier's hearing window…</div>
+    </div>
+
+    <div class="center">
+      <div class="axis-label">Hearing windows on the delay axis →</div>
+      <div class="soldier"><div class="name"><b>Soldier A</b></div><div class="track"><div class="bar a" id="barA"></div></div></div>
+      <div class="soldier"><div class="name"><b>Soldier B</b> (dull ear)</div><div class="track"><div class="bar b" id="barB"></div><div class="intersect" id="intersect"></div></div></div>
+      <div class="soldier"><div class="name"><b>Soldier C</b></div><div class="track"><div class="bar c" id="barC"></div></div></div>
+      <div class="legend">
+        <span style="background:rgba(90,143,208,.55);"></span>A wide
+        <span style="background:rgba(192,85,79,.65);"></span>B narrow
+        <span style="background:rgba(224,163,75,.55);"></span>C middle
+        <span style="background:#5fae6a;"></span>overlap (eye width)
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">One order rings out, the whole army must hear it —<br>the soldier with the dullest ear decides the whole army's fate.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elDet = document.getElementById('det');
+  var barA = document.getElementById('barA');
+  var barB = document.getElementById('barB');
+  var barC = document.getElementById('barC');
+  var intersect = document.getElementById('intersect');
+  var elGolden = document.getElementById('golden');
+
+  var STEP_MS = 1900;
+  var idx = -1;   // 0 intro, 1 bars, 2 intersect, 3 golden
+  var timer = null;
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(3, n));
+    if (timer) clearTimeout(timer);
+
+    barA.classList.toggle('on', idx >= 1);
+    barB.classList.toggle('on', idx >= 1);
+    barC.classList.toggle('on', idx >= 1);
+    intersect.classList.toggle('on', idx >= 2);
+    elGolden.classList.toggle('show', idx === 3);
+    elDet.style.transform = idx >= 1 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    var bubble = '';
+    switch (idx) {
+      case -1: bubble = 'Let me check each soldier\'s hearing window…'; break;
+      case 0:  bubble = 'The order has to reach <b>everyone at once</b>. Let me see who can hear it.'; break;
+      case 1:  bubble = 'Each soldier hears across its own window — <b>A</b> wide, <b>B</b> narrow, <b>C</b> in between.'; break;
+      case 2:  bubble = 'The usable width is the <b>overlap</b> — and B\'s dull ear chokes it. Shortest stave of the barrel.'; break;
+      case 3:  bubble = 'The dullest ear decides the whole army\'s fate.'; break;
+    }
+    elBubble.innerHTML = bubble;
+
+    if (idx >= 0 && idx < 3) {
+      timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+    }
+  }
+
+  document.getElementById('replay').addEventListener('click', function () { go(-1); setTimeout(function(){ go(0); }, 300); });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
