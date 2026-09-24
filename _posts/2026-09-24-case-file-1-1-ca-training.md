@@ -50,6 +50,9 @@ DRAM side (QCA): 14 lines × single-data-rate (1 per line per cycle) = 14 bit/cy
 
 ## Eye width: the intersection of every soldier's window
 
+<iframe src="/animations/eye-intersection.html" width="100%" height="620" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="Eye intersection animation"></iframe>
+<p style="text-align: center; color: #888; font-size: 13px; margin-top: 6px;">Auto-plays · <a href="/animations/eye-intersection.html">open full screen ↗</a></p>
+
 CA training sweeps a string of delays, asking each soldier "can you hear the order at this delay?" The delays it can hear form a window. The order has to reach everyone at once, so all the windows are intersected. Three soldiers on a number line:
 
 ```
