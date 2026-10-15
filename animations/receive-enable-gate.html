@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — One Man Guards the Pass</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --read: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 14px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 900px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 62px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 300px; }
+
+  .scene {
+    position: relative; height: 244px; border-radius: 12px; overflow: hidden;
+    background: linear-gradient(180deg, #1a1a28 0%, #1a1a28 78%, #2a2a3a 78%);
+    border: 1px solid var(--line);
+  }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 5; }
+
+  /* gate */
+  .door { position: absolute; top: 14%; width: 9.5%; height: 62%; background: linear-gradient(180deg, #3a3a50, #2a2a3c); border: 1px solid var(--line); transition: transform .6s cubic-bezier(.4,0,.2,1); z-index: 3; }
+  .door.left { left: 45.25%; border-right: none; }
+  .door.right { left: 54.75%; border-left: none; }
+  .door .hinge { position: absolute; top: 12%; width: 4px; height: 76%; background: #4a4a60; border-radius: 2px; }
+  .door.left .hinge { left: 3px; } .door.right .hinge { right: 3px; }
+  .door.open.left { transform: translateX(-104%); }
+  .door.open.right { transform: translateX(104%); }
+
+  .gate-glow { position: absolute; left: 45%; top: 14%; width: 10%; height: 62%; background: var(--ok); opacity: 0; transition: opacity .5s; z-index: 1; border-radius: 4px; }
+  .gate-glow.on { opacity: .16; }
+
+  /* vehicles */
+  .car { position: absolute; bottom: 24%; width: 26px; height: 17px; background: var(--read); border-radius: 4px 4px 2px 2px; transition: left .75s cubic-bezier(.4,0,.2,1), background .3s, opacity .3s; z-index: 2; }
+  .car::after { content:''; position:absolute; top:-5px; width:14px; height:7px; background: rgba(90,143,208,.35); border-radius: 3px 3px 0 0; left:6px; }
+  .car.ok { background: var(--ok); }
+  .car.crash { background: var(--warn); }
+  .noise { position: absolute; bottom: 27%; width: 20px; height: 20px; border-radius: 50%; background: var(--warn); opacity: .28; transition: left .6s ease, opacity .5s; z-index: 2; }
+  .noise::before, .noise::after { content:''; position:absolute; border-radius:50%; background: var(--warn); }
+  .noise::before { width: 9px; height: 9px; top:-4px; left:5px; opacity:.7; }
+  .noise::after { width: 6px; height: 6px; top:2px; left:13px; opacity:.7; }
+  .noise.in { opacity: .5; }
+
+  .crash-flash { position: absolute; left: 50%; bottom: 20%; width: 26px; height: 26px; border-radius: 50%; background: var(--warn); opacity: 0; transition: opacity .3s; z-index: 4; }
+  .crash-flash.on { opacity: .5; }
+
+  /* fine/coarse drill overlay */
+  .drill { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; background: rgba(20,20,31,.94); border-top: 1px solid var(--line); padding: 10px 14px; opacity: 0; transform: translateY(100%); transition: opacity .5s, transform .5s; z-index: 6; }
+  .drill.on { opacity: 1; transform: translateY(0); }
+  .drill .row { display: flex; align-items: center; gap: 10px; font-size: 11px; color: var(--dim); margin-bottom: 7px; }
+  .drill .row .tag2 { flex: 0 0 60px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; }
+  .cycle { flex: 1 1 auto; height: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; position: relative; overflow: hidden; }
+  .tick { position: absolute; top: 0; width: 2px; height: 100%; background: rgba(232,230,240,.08); }
+  .slot { position: absolute; top: 2px; height: calc(100% - 4px); left: 22%; width: 14%; background: var(--read); border-radius: 2px; opacity: 0; transition: opacity .5s; }
+  .slot.on { opacity: .9; }
+  .trips { flex: 1 1 auto; display: flex; gap: 4px; }
+  .trip { flex: 1 1 auto; height: 16px; border-radius: 3px; background: var(--panel); border: 1px solid var(--line); text-align: center; font-size: 10px; line-height: 14px; color: var(--dim); transition: background .4s, color .4s; }
+  .trip.on { background: var(--ok); color: #14141f; border-color: var(--ok); font-weight: 700; }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 900px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.2</div>
+    <h1>One Man Guards the Pass</h1>
+    <div class="sub">The gate must open at the exact moment the data arrives — not a beat early, not a beat late.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Reading is a late reply — the host never knows exactly when it will land…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene" id="scene">
+        <div class="scene-label">outside → gate → host</div>
+
+        <div class="gate-glow" id="glow"></div>
+        <div class="door left" id="doorL"><span class="hinge"></span></div>
+        <div class="door right" id="doorR"><span class="hinge"></span></div>
+
+        <!-- noise (enemies) hover near the gate -->
+        <div class="noise" id="noise1" style="left:34%"></div>
+        <div class="noise" id="noise2" style="left:40%"></div>
+
+        <!-- data fleet (cars) approach from the left -->
+        <div class="car" id="car1" style="left:6%"></div>
+        <div class="car" id="car2" style="left:14%"></div>
+        <div class="car" id="car3" style="left:22%"></div>
+
+        <div class="crash-flash" id="crash"></div>
+
+        <!-- fine/coarse drill -->
+        <div class="drill" id="drill">
+          <div class="row"><span class="tag2">Fine</span><span>find the slot <b>within</b> one cycle</span></div>
+          <div class="row">
+            <span class="tag2" style="color:var(--read)">Fine</span>
+            <div class="cycle" id="cycle">
+              <div class="tick" style="left:0%"></div><div class="tick" style="left:14%"></div><div class="tick" style="left:28%"></div><div class="tick" style="left:42%"></div><div class="tick" style="left:56%"></div><div class="tick" style="left:70%"></div><div class="tick" style="left:84%"></div>
+              <div class="slot" id="slot"></div>
+            </div>
+          </div>
+          <div class="row"><span class="tag2" style="color:var(--ok)">Coarse</span><span>count <b>which trip</b> the light is on</span></div>
+          <div class="row">
+            <span class="tag2" style="color:var(--ok)">Coarse</span>
+            <div class="trips">
+              <div class="trip">1</div><div class="trip">2</div><div class="trip" id="trip3">3</div><div class="trip">4</div><div class="trip">5</div><div class="trip">6</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Write sets the watch once; read guards the door once —<br>open too early and noise walks in, open too late and data leaks away.<br>One man guards the pass.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elDet = document.getElementById('det');
+  var doorL = document.getElementById('doorL');
+  var doorR = document.getElementById('doorR');
+  var glow = document.getElementById('glow');
+  var car1 = document.getElementById('car1');
+  var car2 = document.getElementById('car2');
+  var car3 = document.getElementById('car3');
+  var noise1 = document.getElementById('noise1');
+  var noise2 = document.getElementById('noise2');
+  var crash = document.getElementById('crash');
+  var drill = document.getElementById('drill');
+  var slot = document.getElementById('slot');
+  var trip3 = document.getElementById('trip3');
+  var elGolden = document.getElementById('golden');
+
+  var STEP_MS = 2200;
+  var idx = -1;
+  var timer = null;
+
+  function resetCars() {
+    car1.style.left = '6%';  car2.style.left = '14%'; car3.style.left = '22%';
+    car1.classList.remove('ok','crash'); car2.classList.remove('ok','crash'); car3.classList.remove('ok','crash');
+    noise1.style.left = '34%'; noise2.style.left = '40%';
+    noise1.classList.remove('in'); noise2.classList.remove('in');
+  }
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(4, n));
+    if (timer) clearTimeout(timer);
+
+    doorL.classList.toggle('open', false);
+    doorR.classList.toggle('open', false);
+    glow.classList.toggle('on', false);
+    crash.classList.toggle('on', false);
+    drill.classList.toggle('on', false);
+    slot.classList.toggle('on', false);
+    trip3.classList.toggle('on', false);
+    elGolden.classList.toggle('show', idx === 4);
+    elDet.style.transform = idx >= 0 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    var bubble = '';
+    switch (idx) {
+      case -1:
+        bubble = 'Reading is a late reply — the host never knows exactly when it will land…';
+        break;
+      case 0:
+        bubble = 'Open too early, and <b>noise walks in</b> before the data ever arrives.';
+        break;
+      case 1:
+        bubble = 'Open too late, and the <b>lead car (the preamble) is blocked</b> — the whole read is missed.';
+        break;
+      case 2:
+        bubble = 'Open at the <b>exact moment</b> — the noise stays out, the whole fleet rolls in.';
+        break;
+      case 3:
+        bubble = 'Two knobs: <b>Fine</b> finds the slot within a cycle, <b>Coarse</b> counts which trip the light is on.';
+        break;
+      case 4:
+        bubble = 'One man guards the pass.';
+        break;
+    }
+    elBubble.innerHTML = bubble;
+
+    resetCars();
+
+    if (idx === 0) {
+      // too early: doors open wide, noise rushes in, cars still far
+      doorL.classList.add('open'); doorR.classList.add('open');
+      noise1.style.left = '57%'; noise2.style.left = '63%';
+      noise1.classList.add('in'); noise2.classList.add('in');
+      glow.classList.add('on');
+    } else if (idx === 1) {
+      // too late: doors shut, cars reach the gate, lead car crashes
+      car1.style.left = '46%'; car2.style.left = '52%'; car3.style.left = '58%';
+      car1.classList.add('crash');
+      crash.classList.add('on');
+    } else if (idx === 2) {
+      // just right: doors open, cars enter, noise stays out
+      doorL.classList.add('open'); doorR.classList.add('open');
+      car1.style.left = '60%'; car2.style.left = '68%'; car3.style.left = '76%';
+      car1.classList.add('ok'); car2.classList.add('ok'); car3.classList.add('ok');
+      noise1.style.left = '48%'; noise2.style.left = '50%';
+      glow.classList.add('on');
+    } else if (idx === 3) {
+      drill.classList.add('on');
+      slot.classList.add('on');
+      trip3.classList.add('on');
+    }
+
+    if (idx >= 0 && idx < 4) {
+      timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+    }
+  }
+
+  document.getElementById('replay').addEventListener('click', function () {
+    go(-1); setTimeout(function(){ go(0); }, 300);
+  });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
