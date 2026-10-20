@@ -7,7 +7,7 @@ lang: en
 
 Reading is **standing blindfolded on an invisible diamond island**. The water is everywhere around you — step off and you're gone. All you can do is tap the ground and ask, *steady?* The host maps the island with two rulers: **east–west is timing** (the sampling point — *when* you sample), **north–south is voltage** (the decision line Vref — *how high counts as a 1*). Walk the whole island, find its exact center, and stand there — farthest from all four shores, where neither timing jitter nor voltage noise can push you off. **2D Centering sweeps out this island's 2D map and stands at its center.**
 
-<iframe src="/animations/2d-centering-island.html" width="100%" height="640" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="2D Centering diamond island animation"></iframe>
+<iframe src="/animations/2d-centering-island.html" width="100%" height="720" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="2D Centering diamond island animation"></iframe>
 <p style="text-align: center; color: #888; font-size: 13px; margin-top: 6px;">Auto-plays · <a href="/animations/2d-centering-island.html">open full screen ↗</a></p>
 
 ## The door and the eye
