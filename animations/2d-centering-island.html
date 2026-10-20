@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Eyes on All Sides, Steady at the Center</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --read: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 14px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 20px; max-width: 900px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 6px; }
+  .detective svg { width: 96px; height: 96px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 8px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 6px; min-width: 300px; }
+
+  .scene { position: relative; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { display: block; width: 100%; height: auto; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  /* SVG element states */
+  .ghost { stroke-dasharray: 6 5; }
+  .wall, .tick, .bar, .sweepline, .fill, .star, .topmark, .botmark { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+  .bar.short { stroke: var(--accent); filter: drop-shadow(0 0 6px rgba(224,163,75,.6)); }
+  #probe { transition: cx .7s cubic-bezier(.4,0,.2,1), cy .7s cubic-bezier(.4,0,.2,1); }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 900px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 16px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.4</div>
+    <h1>Eyes on All Sides, Steady at the Center</h1>
+    <div class="sub">A diamond island you can't see — probe it out, stand at its center.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">A diamond island I can't see — water all around. Let me probe it out…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">probe the invisible island → stand at the center</div>
+        <svg viewBox="0 0 340 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- grid -->
+          <g stroke="#2a2a3e" stroke-width="1">
+            <line x1="50" y1="40" x2="50" y2="260"/><line x1="90" y1="40" x2="90" y2="260"/>
+            <line x1="130" y1="40" x2="130" y2="260"/><line x1="170" y1="40" x2="170" y2="260"/>
+            <line x1="210" y1="40" x2="210" y2="260"/><line x1="250" y1="40" x2="250" y2="260"/>
+            <line x1="290" y1="40" x2="290" y2="260"/>
+            <line x1="50" y1="80" x2="290" y2="80"/><line x1="50" y1="120" x2="290" y2="120"/>
+            <line x1="50" y1="150" x2="290" y2="150"/><line x1="50" y1="180" x2="290" y2="180"/>
+            <line x1="50" y1="220" x2="290" y2="220"/><line x1="50" y1="260" x2="290" y2="260"/>
+          </g>
+          <!-- axes -->
+          <text x="286" y="272" fill="#8a87a0" font-size="11" text-anchor="end">timing →</text>
+          <text x="16" y="44" fill="#8a87a0" font-size="11">Vref ↑</text>
+
+          <!-- the true island: dashed ghost -->
+          <polygon id="ghost" class="ghost" points="100,150 170,80 240,150 170,220" fill="none" stroke="#8a87a0" stroke-width="1.5"/>
+
+          <!-- the revealed island: green fill -->
+          <polygon id="fill" class="fill" points="100,150 170,80 240,150 170,220" fill="rgba(95,174,106,.30)" stroke="#5fae6a" stroke-width="2"/>
+
+          <!-- horizontal sweep line (step 0) -->
+          <line id="sweepline" class="sweepline" x1="50" y1="150" x2="290" y2="150" stroke="#5a8fd0" stroke-width="2" stroke-dasharray="4 4"/>
+
+          <!-- left/right walls -->
+          <g id="wallL" class="wall" stroke="#c0554f" stroke-width="3"><line x1="100" y1="128" x2="100" y2="172"/><text x="100" y="126" fill="#c0554f" font-size="11" text-anchor="middle">L</text></g>
+          <g id="wallR" class="wall" stroke="#c0554f" stroke-width="3"><line x1="240" y1="128" x2="240" y2="172"/><text x="240" y="126" fill="#c0554f" font-size="11" text-anchor="middle">R</text></g>
+
+          <!-- top/bottom (step 2) -->
+          <g id="topmark" class="topmark" stroke="#5a8fd0" stroke-width="3"><line x1="150" y1="80" x2="190" y2="80"/></g>
+          <g id="botmark" class="botmark" stroke="#5a8fd0" stroke-width="3"><line x1="150" y1="220" x2="190" y2="220"/></g>
+
+          <!-- 3 timing points (ticks) -->
+          <line id="tickC" class="tick" x1="170" y1="76" x2="170" y2="224" stroke="#8a87a0" stroke-width="1" stroke-dasharray="3 3"/>
+          <line id="tickL" class="tick" x1="147" y1="76" x2="147" y2="224" stroke="#8a87a0" stroke-width="1" stroke-dasharray="3 3"/>
+          <line id="tickR" class="tick" x1="193" y1="76" x2="193" y2="224" stroke="#8a87a0" stroke-width="1" stroke-dasharray="3 3"/>
+
+          <!-- 3 height bars -->
+          <line id="barC" class="bar" x1="170" y1="80" x2="170" y2="220" stroke="#5fae6a" stroke-width="6" stroke-linecap="round"/>
+          <line id="barL" class="bar" x1="147" y1="103" x2="147" y2="197" stroke="#5fae6a" stroke-width="6" stroke-linecap="round"/>
+          <line id="barR" class="bar" x1="193" y1="103" x2="193" y2="197" stroke="#5fae6a" stroke-width="6" stroke-linecap="round"/>
+
+          <!-- center star -->
+          <text id="star" class="star" x="170" y="159" fill="#e0a34b" font-size="26" text-anchor="middle">★</text>
+
+          <!-- probe -->
+          <circle id="probe" cx="170" cy="150" r="6" fill="#e0a34b" stroke="#14141f" stroke-width="2"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">The geometric center of the eye leaves margin on all four sides —<br>timing jitter and voltage noise can't shake it. Eyes on all sides, steady at the center.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elDet = document.getElementById('det');
+  var elGolden = document.getElementById('golden');
+  var probe = document.getElementById('probe');
+  var sweep = document.getElementById('sweepline');
+  var wallL = document.getElementById('wallL'), wallR = document.getElementById('wallR');
+  var topmark = document.getElementById('topmark'), botmark = document.getElementById('botmark');
+  var tickC = document.getElementById('tickC'), tickL = document.getElementById('tickL'), tickR = document.getElementById('tickR');
+  var barC = document.getElementById('barC'), barL = document.getElementById('barL'), barR = document.getElementById('barR');
+  var fill = document.getElementById('fill'), star = document.getElementById('star');
+
+  var STEP_MS = 2300;
+  var idx = -1;
+  var timer = null;
+
+  function cls(el, on) { if (on) el.classList.add('show'); else el.classList.remove('show'); }
+  function setProbe(x, y) { probe.setAttribute('cx', x); probe.setAttribute('cy', y); }
+
+  function reset() {
+    cls(sweep, false); cls(wallL, false); cls(wallR, false);
+    cls(topmark, false); cls(botmark, false);
+    cls(tickC, false); cls(tickL, false); cls(tickR, false);
+    cls(barC, false); cls(barL, false); cls(barR, false);
+    cls(fill, false); cls(star, false);
+    barC.classList.remove('short'); barL.classList.remove('short'); barR.classList.remove('short');
+    cls(elGolden, false);
+    elDet.style.transform = 'none';
+    setProbe(170, 150);
+  }
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(5, n));
+    if (timer) clearTimeout(timer);
+    reset();
+
+    var bubble = '';
+    switch (idx) {
+      case -1: bubble = 'A diamond island I can\'t see — water all around. Let me probe it out…'; break;
+      case 0:
+        bubble = 'Sweep <b>east–west (timing)</b>: tap left, tap right, hit the <b>walls L and R</b>. That\'s the eye\'s width.';
+        cls(sweep, true); cls(wallL, true); cls(wallR, true);
+        break;
+      case 1:
+        bubble = 'Three points: <b>center + one each side (±T)</b>. The diamond narrows near the edges — don\'t measure only the middle.';
+        cls(tickC, true); cls(tickL, true); cls(tickR, true);
+        setProbe(147, 150);
+        break;
+      case 2:
+        bubble = 'Sweep <b>north–south (voltage)</b> at each point. Look — the <b>edge heights are narrower</b>, the center is thickest.';
+        cls(tickC, true); cls(tickL, true); cls(tickR, true);
+        cls(barC, true); cls(barL, true); cls(barR, true);
+        cls(topmark, true); cls(botmark, true);
+        setProbe(147, 150);
+        break;
+      case 3:
+        bubble = 'Take the <b>shortest height</b> — the edge, not the center — as the reference Vref. Don\'t let the thick middle fool you.';
+        cls(barC, true); cls(barL, true); cls(barR, true);
+        barL.classList.add('short'); barR.classList.add('short');
+        setProbe(147, 150);
+        break;
+      case 4:
+        bubble = 'Fine sweep: fill the grid <b>cell by cell</b> (33 Vref × full timing × 2 ranks), outline the whole island.';
+        cls(fill, true);
+        setProbe(170, 150);
+        break;
+      case 5:
+        bubble = 'Stand at the <b>geometric center ★</b> — farthest from all four shores. Eyes on all sides, steady at the center.';
+        cls(fill, true); cls(star, true);
+        setProbe(170, 150);
+        cls(elGolden, true);
+        break;
+    }
+    elBubble.innerHTML = bubble;
+
+    if (idx >= 0) elDet.style.transform = 'translateY(2px) rotate(-2deg)';
+    if (idx >= 0 && idx < 5) timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+  }
+
+  document.getElementById('replay').addEventListener('click', function () {
+    go(-1); setTimeout(function () { go(0); }, 300);
+  });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
