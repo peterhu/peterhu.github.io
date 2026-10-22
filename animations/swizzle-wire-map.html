@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Find Your Seat (Swizzle)</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --gold: #c9a34a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 26px 16px 36px;
+  }
+  .head { text-align: center; margin-bottom: 14px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 22px; font-weight: 600; margin-top: 4px; }
+  .head .sub { color: var(--dim); font-size: 13px; margin-top: 4px; max-width: 640px; }
+
+  .stage { display: flex; align-items: stretch; gap: 16px; max-width: 900px; width: 100%; }
+
+  .detective { flex: 0 0 120px; text-align: center; }
+  .detective svg { width: 92px; height: 92px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px; font-size: 12px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 64px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .board { flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .board svg { width: 100%; height: auto; display: block; }
+
+  .table { flex: 0 0 220px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .table .t-title { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .table .row {
+    display: flex; align-items: baseline; gap: 8px; padding: 4px 6px; border-radius: 5px;
+    opacity: .14; transition: opacity .3s ease, background .3s ease;
+    font-size: 12px;
+  }
+  .table .row.on { opacity: 1; background: rgba(224,163,75,.10); }
+  .table .row .cpu { font-weight: 700; width: 52px; }
+  .table .row .arrow { color: var(--dim); }
+  .table .row .dram { font-family: ui-monospace, monospace; }
+
+  .golden {
+    margin-top: 16px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 14px 18px;
+    text-align: center; max-width: 900px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 18px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 14px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 720px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective, .table { flex: none; width: 100%; }
+    .board { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 0.6</div>
+    <h1>Find Your Seat</h1>
+    <div class="sub">The board crossed the wires. The detective lights one DQ at a time and traces which pin glows at the far end.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">The wires are crossed. Let me light one up…</div>
+    </div>
+
+    <div class="board">
+      <svg id="wires" viewBox="0 0 620 460" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <div class="table">
+      <div class="t-title">Mapping table · DqMapCpu2Dram</div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Before training anything,<br>find out who is wired to whom.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays · the crossed wire glows end to end</span>
+  </div>
+
+<script>
+  // 8 DQ pins, each with a fixed color identity
+  var COLORS = ["#e06c6c","#e0a34b","#d4c44a","#6cb86c","#5bb8c9","#6c8ce0","#a86cd4","#d46ca8"];
+  var NAMES  = ["DQ0","DQ1","DQ2","DQ3","DQ4","DQ5","DQ6","DQ7"];
+  // the board swizzle: CPU DQ i is physically wired to DRAM DQ map[i]
+  var MAP = [6,4,0,2,7,1,3,5];
+
+  var svg = document.getElementById('wires');
+  var NS = 'http://www.w3.org/2000/svg';
+  var elBubble = document.getElementById('bubble');
+  var elGolden = document.getElementById('golden');
+  var elDet = document.getElementById('det');
+  var rowsWrap = document.getElementById('rows');
+
+  // build the static wiring
+  var cpuX = 70, dramX = 550;
+  var y0 = 40, dy = 54;
+  var wires = [];
+
+  function el(name, attrs) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    svg.appendChild(n);
+    return n;
+  }
+
+  // labels
+  el('text', {x: cpuX-52, y: 20, fill:'#8a87a0', 'font-size':'13', 'font-weight':'700', 'text-anchor':'middle'}).textContent = 'CPU';
+  el('text', {x: dramX+52, y: 20, fill:'#8a87a0', 'font-size':'13', 'font-weight':'700', 'text-anchor':'middle'}).textContent = 'DRAM';
+
+  var cpuPorts = [], dramPorts = [];
+  for (var i = 0; i < 8; i++) {
+    var y = y0 + i * dy;
+    // CPU port (left)
+    var cp = el('circle', {cx: cpuX, cy: y, r: 9, fill:'#0e0e14', stroke: COLORS[i], 'stroke-width': 2.5});
+    cpuPorts.push(cp);
+    el('text', {x: cpuX-20, y: y+4, fill: COLORS[i], 'font-size':'11', 'font-weight':'700', 'text-anchor':'end'}).textContent = NAMES[i];
+    // DRAM port (right)
+    var dp = el('circle', {cx: dramX, cy: y, r: 9, fill:'#0e0e14', stroke: '#34344a', 'stroke-width': 2.5});
+    dramPorts.push(dp);
+    el('text', {x: dramX+20, y: y+4, fill:'#8a87a0', 'font-size':'11', 'text-anchor':'start'}).textContent = NAMES[i];
+  }
+
+  // crossed wires
+  for (i = 0; i < 8; i++) {
+    var fromY = y0 + i * dy;
+    var toY = y0 + MAP[i] * dy;
+    var midX = (cpuX + dramX) / 2;
+    var w = el('path', {
+      d: 'M ' + cpuX + ' ' + fromY + ' C ' + midX + ' ' + fromY + ', ' + midX + ' ' + toY + ', ' + dramX + ' ' + toY,
+      fill: 'none', stroke: COLORS[i], 'stroke-width': 2, opacity: 0.16,
+      'stroke-linecap': 'round'
+    });
+    wires.push(w);
+  }
+
+  // table rows
+  for (i = 0; i < 8; i++) {
+    var r = document.createElement('div');
+    r.className = 'row';
+    r.innerHTML = '<span class="cpu">CPU ' + NAMES[i] + '</span><span class="arrow">→</span><span class="dram">?</span>';
+    rowsWrap.appendChild(r);
+  }
+  var rowEls = rowsWrap.children;
+
+  var STEP_MS = 1250;
+  var idx = -1; // -1..7 = which CPU DQ, 8 = golden
+  var timer = null;
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(8, n));
+
+    wires.forEach(function (w, i) {
+      var on = (i === idx);
+      w.setAttribute('opacity', on ? 1 : 0.16);
+      w.setAttribute('stroke-width', on ? 5 : 2);
+    });
+    cpuPorts.forEach(function (p, i) {
+      var on = (i === idx);
+      p.setAttribute('fill', on ? COLORS[i] : '#0e0e14');
+      p.setAttribute('stroke-width', on ? 4 : 2.5);
+    });
+    dramPorts.forEach(function (p, i) {
+      var on = (idx >= 0 && MAP[idx] === i);
+      p.setAttribute('fill', on ? COLORS[idx] : '#0e0e14');
+      p.setAttribute('stroke', on ? COLORS[idx] : '#34344a');
+      p.setAttribute('stroke-width', on ? 4 : 2.5);
+    });
+    rowEls[idx].classList.toggle('on', idx >= 0);
+
+    elDet.style.transform = idx >= 0 ? 'translateY(2px) rotate(-2deg)' : 'none';
+
+    if (idx === -1) {
+      elBubble.innerHTML = 'The wires are crossed. Let me light one up…';
+    } else if (idx < 8) {
+      elBubble.innerHTML = 'Light up <b>CPU ' + NAMES[idx] + '</b>… it glows at <b>DRAM ' + NAMES[MAP[idx]] + '</b>.';
+      rowsWrap.children[idx].querySelector('.dram').textContent = NAMES[MAP[idx]];
+    } else {
+      elBubble.innerHTML = 'Eight rounds, and I\'ve got the <b>whole seating chart</b>.';
+    }
+
+    elGolden.classList.toggle('show', idx === 8);
+    if (timer) clearTimeout(timer);
+    if (idx < 8) timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+  }
+
+  document.getElementById('replay').addEventListener('click', function () {
+    rowsWrap.querySelectorAll('.dram').forEach(function (d) { d.textContent = '?'; });
+    rowEls = rowsWrap.children;
+    for (var i = 0; i < 8; i++) rowEls[i].classList.remove('on');
+    go(-1);
+  });
+
+  setTimeout(function () { go(0); }, 800);
+</script>
+</body>
+</html>
