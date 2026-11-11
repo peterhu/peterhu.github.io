@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Boost the Treble, Silence the Crosstalk</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --read: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 14px 26px;
+  }
+  .head { text-align: center; margin-bottom: 10px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 16px; max-width: 880px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 4px; }
+  .detective svg { width: 82px; height: 82px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 9px; font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 4px; min-width: 320px; }
+
+  .scene { position: relative; height: 300px; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  .dull, .sharp, .knob, .xtalk, .anti, .eyeN, .eyeW { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+  .pulse { animation: throb 1.4s ease-in-out infinite; transform-origin: center; }
+  @keyframes throb { 0%,100% { opacity:.7 } 50% { opacity:1 } }
+
+  .golden {
+    margin-top: 12px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px;
+    text-align: center; max-width: 880px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.8</div>
+    <h1>Boost the Treble, Silence the Crosstalk</h1>
+    <div class="sub">A long line eats the treble; neighbors talk through the wall — CTLE and DXC fix both.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">A signal travels a long line and turns dull…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">dull → treble up → sharp · neighbors leak → anti-noise → clean</div>
+        <svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <!-- treble panel (top): dull vs sharp signal -->
+          <text x="24" y="34" fill="#8a87a0" font-size="11">CTLE · treble</text>
+          <line x1="40" y1="55" x2="440" y2="55" stroke="#2a2a3e" stroke-width="1.5"/>
+          <!-- dull signal (rounded) -->
+          <path id="dull" class="dull" d="M60 55 Q90 38 120 55 Q150 72 180 55 Q210 38 240 55 Q270 72 300 55 Q330 38 360 55 Q390 72 420 55" fill="none" stroke="#c0554f" stroke-width="3" stroke-linecap="round"/>
+          <text id="dullLbl" class="dull" x="60" y="78" fill="#c0554f" font-size="10">dull (high freq eaten)</text>
+          <!-- sharp signal (after CTLE) -->
+          <path id="sharp" class="sharp" d="M60 55 L80 55 L80 42 L100 42 L100 55 L120 55 L120 42 L140 42 L140 55 L160 55 L160 42 L180 42 L180 55 L200 55 L200 42 L220 42 L220 55 L240 55 L240 42 L260 42 L260 55 L280 55 L280 42 L300 42 L300 55 L320 55 L320 42 L340 42 L340 55 L360 55 L360 42 L380 42 L380 55 L400 55 L400 42 L420 42 L420 55" fill="none" stroke="#5fae6a" stroke-width="3" stroke-linejoin="round"/>
+          <text id="sharpLbl" class="sharp" x="60" y="78" fill="#5fae6a" font-size="10">sharp (treble restored)</text>
+          <!-- treble knob -->
+          <g id="knob" class="knob">
+            <circle cx="240" cy="95" r="16" fill="none" stroke="#e0a34b" stroke-width="2.5"/>
+            <line x1="240" y1="95" x2="248" y2="82" stroke="#e0a34b" stroke-width="3" stroke-linecap="round"/>
+            <text x="268" y="99" fill="#e0a34b" font-size="11">treble ↑</text>
+          </g>
+
+          <!-- crosstalk panel (bottom): neighbors leak -->
+          <text x="24" y="150" fill="#8a87a0" font-size="11">DXC · crosstalk</text>
+          <line x1="40" y1="172" x2="440" y2="172" stroke="#2a2a3e" stroke-width="1.5"/>
+          <!-- leaked wave (neighbor bleeding in) -->
+          <path id="xtalk" class="xtalk" d="M60 172 Q100 150 140 172 Q180 194 220 172 Q260 150 300 172 Q340 194 380 172 Q400 160 420 172" fill="none" stroke="#c0554f" stroke-width="2.5" stroke-dasharray="5 3" class="pulse"/>
+          <text id="xtalkLbl" class="xtalk" x="60" y="198" fill="#c0554f" font-size="10">neighbor's voice leaks in</text>
+          <!-- anti-noise wave -->
+          <path id="anti" class="anti" d="M60 172 Q100 194 140 172 Q180 150 220 172 Q260 194 300 172 Q340 150 380 172 Q400 184 420 172" fill="none" stroke="#5fae6a" stroke-width="2.5" stroke-linecap="round"/>
+          <!-- clean line (after DXC) -->
+          <path id="clean" class="anti" d="M60 172 L420 172" fill="none" stroke="#5fae6a" stroke-width="2" stroke-linecap="round"/>
+          <text id="cleanLbl" class="anti" x="60" y="198" fill="#5fae6a" font-size="10">crosstalk cancelled — own signal only</text>
+
+          <!-- eye -->
+          <g id="eyeN" class="eyeN">
+            <path d="M170 228 Q250 214 330 228 Q250 242 170 228 Z" fill="rgba(192,85,79,.25)" stroke="#c0554f" stroke-width="2"/>
+            <text x="390" y="236" fill="#c0554f" font-size="11">eye: narrow</text>
+          </g>
+          <g id="eyeW" class="eyeW">
+            <path d="M170 226 Q250 202 330 226 Q250 250 170 226 Z" fill="rgba(95,174,106,.28)" stroke="#5fae6a" stroke-width="2"/>
+            <text x="390" y="236" fill="#5fae6a" font-size="11">eye: wide</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">The trace eats the treble, CTLE restores it; neighbors talk through the wall,<br>DXC cancels it — the read path's two restorers bring the eye back big and sharp.</div>
+  </div>
+
+  <div class="controls">
+    <button id="replay" class="primary">↺ Replay</button>
+    <span class="hint">auto-plays</span>
+  </div>
+
+<script>
+  var elBubble = document.getElementById('bubble');
+  var elDet = document.getElementById('det');
+  var elGolden = document.getElementById('golden');
+  var dull = document.getElementById('dull'), dullLbl = document.getElementById('dullLbl');
+  var sharp = document.getElementById('sharp'), sharpLbl = document.getElementById('sharpLbl');
+  var knob = document.getElementById('knob');
+  var xtalk = document.getElementById('xtalk'), xtalkLbl = document.getElementById('xtalkLbl');
+  var anti = document.getElementById('anti'), cleanLbl = document.getElementById('cleanLbl');
+  var eyeN = document.getElementById('eyeN'), eyeW = document.getElementById('eyeW');
+
+  var STEP_MS = 2700;
+  var idx = -1;
+  var timer = null;
+
+  function cls(el, on) { if (on) el.classList.add('show'); else el.classList.remove('show'); }
+
+  function reset() {
+    cls(dull, false); cls(dullLbl, false); cls(sharp, false); cls(sharpLbl, false); cls(knob, false);
+    cls(xtalk, false); cls(xtalkLbl, false); cls(anti, false); cls(cleanLbl, false);
+    cls(eyeN, false); cls(eyeW, false);
+    cls(elGolden, false);
+    elDet.style.transform = 'none';
+  }
+
+  function go(n) {
+    idx = Math.max(-1, Math.min(6, n));
+    if (timer) clearTimeout(timer);
+    reset();
+
+    var bubble = '';
+    switch (idx) {
+      case -1:
+        bubble = 'A signal travels a long line and turns dull…';
+        break;
+      case 0:
+        bubble = 'The long trace eats the <b>high frequencies</b> — the signal arrives <b>dull</b> (rounded edges), and the eye narrows.';
+        cls(dull, true); cls(dullLbl, true); cls(eyeN, true);
+        break;
+      case 1:
+        bubble = '<b>CTLE is the treble knob</b>: turn it up, the eaten high frequencies come back, the signal turns <b>sharp</b>.';
+        cls(dull, true); cls(sharp, true); cls(sharpLbl, true); cls(knob, true); cls(eyeN, true);
+        break;
+      case 2:
+        bubble = 'Training <b>sweeps the treble knob</b>, measures the eye, picks the sharpest — the <b>eye opens wide</b>.';
+        cls(sharp, true); cls(sharpLbl, true); cls(knob, true); cls(eyeW, true);
+        break;
+      case 3:
+        bubble = 'Neighboring DQ lines sit close — a signal <b>leaks into its neighbor</b>. That crosstalk muddies the signal.';
+        cls(sharp, true); cls(xtalk, true); cls(xtalkLbl, true); cls(eyeN, true);
+        break;
+      case 4:
+        bubble = '<b>DXC is the anti-noise wave</b>: it subtracts the neighbor\'s leaked voice, leaving only your own signal.';
+        cls(sharp, true); cls(xtalk, true); cls(anti, true); cls(cleanLbl, true); cls(eyeN, true);
+        break;
+      case 5:
+        bubble = 'Training <b>sweeps the anti-noise</b>, finds the cleanest setting — the <b>eye opens wide</b> again.';
+        cls(sharp, true); cls(anti, true); cls(cleanLbl, true); cls(eyeW, true);
+        break;
+      case 6:
+        bubble = 'The trace eats the treble, CTLE restores it; neighbors talk through the wall, DXC cancels it.';
+        cls(sharp, true); cls(anti, true); cls(cleanLbl, true); cls(eyeW, true);
+        cls(elGolden, true);
+        break;
+    }
+    elBubble.innerHTML = bubble;
+
+    if (idx >= 0) elDet.style.transform = 'translateY(2px) rotate(-2deg)';
+    if (idx >= 0 && idx < 6) timer = setTimeout(function () { go(idx + 1); }, STEP_MS);
+  }
+
+  document.getElementById('replay').addEventListener('click', function () {
+    go(-1); setTimeout(function () { go(0); }, 300);
+  });
+
+  setTimeout(function () { go(0); }, 700);
+</script>
+</body>
+</html>
