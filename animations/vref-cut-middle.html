@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Cut It Down the Middle (Vref)</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --day: #e0a34b; --night: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 14px 26px;
+  }
+  .head { text-align: center; margin-bottom: 10px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 16px; max-width: 880px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 4px; }
+  .detective svg { width: 82px; height: 82px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 9px; font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 4px; min-width: 320px; }
+
+  .scene { position: relative; height: 300px; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  .ph { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+  .pulse { animation: throb 1.6s ease-in-out infinite; }
+  @keyframes throb { 0%,100% { opacity:.6 } 50% { opacity:1 } }
+
+  .golden {
+    margin-top: 12px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px;
+    text-align: center; max-width: 880px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .4; cursor: default; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.12</div>
+    <h1>Cut It Down the Middle</h1>
+    <div class="sub">Vref is the voltage line that decides 0 or 1 — cut it down the middle and both sides keep their margin.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Above the line is a 1, below it a 0…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">Vref = the 0/1 decision line · one ruler isn't enough · differential needs none</div>
+        <svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+
+          <!-- ============ STEP 1: cut the cake — Vref = the decision line ============ -->
+          <g id="ph1" class="ph">
+            <text x="18" y="24" fill="#8a87a0" font-size="11">Vref · the 0/1 decision line (the cut)</text>
+
+            <!-- left cake: cut too high -->
+            <polygon points="140,45 225,125 140,205 55,125" fill="rgba(224,163,75,0.10)" stroke="#e0a34b" stroke-width="2"/>
+            <polygon points="140,45 225,125 140,88 55,125" fill="rgba(192,85,79,0.28)"/>
+            <polygon points="140,205 225,125 140,88 55,125" fill="rgba(95,174,106,0.22)"/>
+            <line x1="55" y1="88" x2="225" y2="88" stroke="#c0554f" stroke-width="3"/>
+            <rect x="223" y="80" width="6" height="16" rx="2" fill="#c0554f"/>
+            <text x="140" y="72" text-anchor="middle" fill="#e8e6f0" font-size="13" font-weight="600">1</text>
+            <text x="140" y="182" text-anchor="middle" fill="#e8e6f0" font-size="13" font-weight="600">0</text>
+            <text x="60" y="82" fill="#c0554f" font-size="9">Vref</text>
+            <text x="140" y="222" text-anchor="middle" fill="#c0554f" font-size="10">lean high → 1's slice thin</text>
+
+            <!-- right cake: cut in the middle -->
+            <polygon points="350,45 435,125 350,205 265,125" fill="rgba(224,163,75,0.10)" stroke="#e0a34b" stroke-width="2"/>
+            <polygon points="350,45 435,125 350,125 265,125" fill="rgba(95,174,106,0.25)"/>
+            <polygon points="350,205 435,125 350,125 265,125" fill="rgba(95,174,106,0.25)"/>
+            <line x1="265" y1="125" x2="435" y2="125" stroke="#5fae6a" stroke-width="3" stroke-dasharray="6 4" class="pulse"/>
+            <rect x="433" y="117" width="6" height="16" rx="2" fill="#5fae6a"/>
+            <text x="350" y="92" text-anchor="middle" fill="#e8e6f0" font-size="13" font-weight="600">1</text>
+            <text x="350" y="180" text-anchor="middle" fill="#e8e6f0" font-size="13" font-weight="600">0</text>
+            <text x="270" y="119" fill="#5fae6a" font-size="9">Vref</text>
+            <text x="350" y="222" text-anchor="middle" fill="#5fae6a" font-size="10">cut in the middle → equal</text>
+          </g>
+
+          <!-- ============ STEP 2: one ruler isn't enough — tare each scale ============ -->
+          <g id="ph2" class="ph">
+            <text x="16" y="22" fill="#c0554f" font-size="11">one shared zero — the average</text>
+            <text x="266" y="22" fill="#5fae6a" font-size="11">per-bit — tare each scale</text>
+
+            <!-- LEFT: 4 scales, zero drifts -->
+            <g transform="translate(60,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#8a87a0" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#8a87a0" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#8a87a0" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+            </g>
+            <text x="60" y="188" text-anchor="middle" fill="#c0554f" font-size="10">+2g</text>
+            <g transform="translate(115,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#8a87a0" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#8a87a0" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#8a87a0" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+            </g>
+            <text x="115" y="188" text-anchor="middle" fill="#c0554f" font-size="10">−1g</text>
+            <g transform="translate(170,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#8a87a0" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#8a87a0" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#8a87a0" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+            </g>
+            <text x="170" y="188" text-anchor="middle" fill="#c0554f" font-size="10">+3g</text>
+            <g transform="translate(225,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#8a87a0" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#8a87a0" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#8a87a0" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+            </g>
+            <text x="225" y="188" text-anchor="middle" fill="#c0554f" font-size="10">+1g</text>
+
+            <!-- LEFT: one shared arrow (the average) can't zero each -->
+            <path d="M40 120 L236 120" stroke="#e0a34b" stroke-width="2" stroke-dasharray="6 4"/>
+            <path d="M236 120 l-6 -4 v8 Z" fill="#e0a34b"/>
+            <text x="40" y="114" fill="#e0a34b" font-size="9">one average for all</text>
+            <text x="138" y="218" text-anchor="middle" fill="#c0554f" font-size="10">empty pan reads off — one average can't zero each</text>
+
+            <!-- RIGHT: 4 scales, tare pressed, all zero -->
+            <g transform="translate(300,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#5fae6a" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#5fae6a" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#5fae6a" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+              <circle cx="0" cy="28" r="2.6" fill="#5fae6a"/>
+            </g>
+            <text x="300" y="188" text-anchor="middle" fill="#5fae6a" font-size="10">0g</text>
+            <g transform="translate(355,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#5fae6a" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#5fae6a" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#5fae6a" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+              <circle cx="0" cy="28" r="2.6" fill="#5fae6a"/>
+            </g>
+            <text x="355" y="188" text-anchor="middle" fill="#5fae6a" font-size="10">0g</text>
+            <g transform="translate(410,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#5fae6a" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#5fae6a" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#5fae6a" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+              <circle cx="0" cy="28" r="2.6" fill="#5fae6a"/>
+            </g>
+            <text x="410" y="188" text-anchor="middle" fill="#5fae6a" font-size="10">0g</text>
+            <g transform="translate(465,150)">
+              <ellipse cx="0" cy="0" rx="15" ry="4" fill="#1a1a28" stroke="#5fae6a" stroke-width="1.5"/>
+              <line x1="0" y1="3" x2="0" y2="26" stroke="#5fae6a" stroke-width="1.5"/>
+              <rect x="-12" y="26" width="24" height="16" rx="3" fill="#1e1e2e" stroke="#5fae6a" stroke-width="1.2"/>
+              <rect x="-16" y="44" width="32" height="7" rx="2" fill="#34344a"/>
+              <circle cx="0" cy="28" r="2.6" fill="#5fae6a"/>
+            </g>
+            <text x="465" y="188" text-anchor="middle" fill="#5fae6a" font-size="10">0g</text>
+
+            <text x="370" y="218" text-anchor="middle" fill="#5fae6a" font-size="10">press each tare button → all read 0</text>
+
+            <text x="240" y="242" text-anchor="middle" fill="#8a87a0" font-size="11">one baseline + a small per-bit offset · DQ, CA, CS are three paths → three lines</text>
+          </g>
+
+          <!-- ============ STEP 3: differential needs no ruler ============ -->
+          <g id="ph3" class="ph">
+            <text x="18" y="24" fill="#8a87a0" font-size="11">differential — CK_t / CK_c</text>
+            <text x="270" y="24" fill="#8a87a0" font-size="11">single-ended — DQ</text>
+
+            <path d="M40 125 L40 80 L80 80 L80 170 L120 170 L120 80 L160 80 L160 170 L200 170 L200 80 L220 80" fill="none" stroke="#5a8fd0" stroke-width="2.5"/>
+            <path d="M40 125 L40 170 L80 170 L80 80 L120 80 L120 170 L160 170 L160 80 L200 80 L200 170 L220 170" fill="none" stroke="#e0a34b" stroke-width="2.5"/>
+            <circle cx="40" cy="125" r="3" fill="#5fae6a"/>
+            <circle cx="80" cy="125" r="3" fill="#5fae6a"/>
+            <circle cx="120" cy="125" r="3" fill="#5fae6a"/>
+            <circle cx="160" cy="125" r="3" fill="#5fae6a"/>
+            <circle cx="200" cy="125" r="3" fill="#5fae6a"/>
+            <text x="104" y="205" text-anchor="middle" fill="#5fae6a" font-size="10">crossing = the reference, no ruler drawn</text>
+
+            <path d="M268 80 L298 80 L298 170 L328 170 L328 80 L358 80 L358 170 L388 170 L388 80 L418 80 L418 170 L448 170 L448 80" fill="none" stroke="#5a8fd0" stroke-width="2.5"/>
+            <line x1="260" y1="125" x2="455" y2="125" stroke="#e0a34b" stroke-width="2.5" stroke-dasharray="6 4" class="pulse"/>
+            <text x="266" y="120" fill="#e0a34b" font-size="9">Vref</text>
+            <text x="452" y="108" text-anchor="middle" fill="#5a8fd0" font-size="10">1</text>
+            <text x="452" y="142" text-anchor="middle" fill="#5a8fd0" font-size="10">0</text>
+            <text x="355" y="205" text-anchor="middle" fill="#e0a34b" font-size="10">one wire → needs a Vref drawn</text>
+
+            <text x="240" y="242" text-anchor="middle" fill="#8a87a0" font-size="11">CK / DQS say WHEN (edge) · DQ + VrefDQ say WHAT (0 or 1)</text>
+          </g>
+
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="prev">‹ Back</button>
+        <button id="next" class="primary">Next ›</button>
+        <span class="hint" id="hint">Step 1 of 3</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Cut the line right down the middle, and both sides keep their margin. Lean one way, and that side gives out first.</div>
+  </div>
+
+<script>
+  const steps = ['ph1', 'ph2', 'ph3'];
+  const bubbles = [
+    'Above the line is a 1, below it a 0 — that line is Vref. Cut it down the middle and both sides keep their margin; lean it one way and that side hangs by a thread.',
+    'But one ruler only covers the average. Every DQ\'s comparator is born a little crooked, so each gets its own tare — a tiny per-bit offset that zeroes its own tilt. DQ, CA and CS are three different paths, so each needs its own line.',
+    'A differential pair needs no ruler at all: CK_t and CK_c swing as mirror images and cross exactly in the middle — the crossing is the reference. Only the single-ended DQ needs a Vref drawn for it.'
+  ];
+  let i = 0;
+  const bubble = document.getElementById('bubble');
+  const hint = document.getElementById('hint');
+  const golden = document.getElementById('golden');
+  function render() {
+    steps.forEach((s, k) => document.getElementById(s).classList.toggle('show', k === i));
+    bubble.innerHTML = bubbles[i];
+    hint.textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
+    golden.classList.toggle('show', i === steps.length - 1);
+    document.getElementById('prev').disabled = (i === 0);
+    document.getElementById('next').textContent = (i === steps.length - 1) ? 'Restart' : 'Next ›';
+  }
+  document.getElementById('next').addEventListener('click', () => { i = (i + 1) % steps.length; render(); });
+  document.getElementById('prev').addEventListener('click', () => { i = (i - 1 + steps.length) % steps.length; render(); });
+  render();
+  // auto-play
+  let t = setInterval(() => { i = (i + 1) % steps.length; render(); }, 4200);
+  document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { clearInterval(t); }));
+</script>
+</body>
+</html>
