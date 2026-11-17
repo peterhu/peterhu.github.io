@@ -48,19 +48,8 @@ While we're here: only single-ended signals need this line. CK/DQS are different
 
 Differential is two wires — true (CK_t / DQS_t) and complement (CK_c / DQS_c) — always opposite, mirror images:
 
-```text
-voltage
- ↑
- │  ╱╲    ╱╲    ╱╲          ← true CK_t (swings up)
- │ ╱  ╲  ╱  ╲  ╱  ╲
- │╱    ╲╱    ╲╱    ╲
- ├──────────────────────     ← VIX (crossing: the two lines are equal)
- │╲    ╱╲    ╱╲    ╱
- │ ╲  ╱  ╲  ╱  ╲  ╱
- │  ╲╱    ╲╱    ╲╱          ← complement CK_c (mirror image)
- │
- └──────────────────────→ time
-```
+<iframe src="/animations/differential-vix-crossing.html" width="100%" height="720" style="border: none; border-radius: 12px; display: block;" loading="lazy" title="The differential pair crosses in the middle — no Vref needed"></iframe>
+<p style="text-align: center; color: #888; font-size: 13px; margin-top: 6px;">Auto-plays · <a href="/animations/differential-vix-crossing.html">open full screen ↗</a></p>
 
 The moment the two lines cross (t equals c) is the flip. Since the two are symmetric, the crossing naturally lands in the middle of the swing — the complement is the true's own reference, so no one needs to draw a ruler. DQ, by contrast, has only one wire and no reference to lean on, so we have to draw a Vref for it.
 
