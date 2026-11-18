@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Nearest First, Farthest Last (Rank-to-Rank)</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --day: #e0a34b; --night: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 14px 26px;
+  }
+  .head { text-align: center; margin-bottom: 10px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 16px; max-width: 880px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 4px; }
+  .detective svg { width: 82px; height: 82px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 9px; font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 4px; min-width: 320px; }
+
+  .scene { position: relative; height: 300px; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  .ph { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+  .pulse { animation: throb 1.6s ease-in-out infinite; }
+  @keyframes throb { 0%,100% { opacity:.6 } 50% { opacity:1 } }
+
+  .golden {
+    margin-top: 12px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px;
+    text-align: center; max-width: 880px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .4; cursor: default; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 1.13</div>
+    <h1>Nearest First, Farthest Last</h1>
+    <div class="sub">Ranks on a fly-by bus arrive at different times — rank-to-rank measures the gap so switching stays aligned.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">The shout reaches everyone, CS names one…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">CS = the name call · fly-by = first come, later arrive · shared wire = one talker at a time</div>
+        <svg viewBox="0 0 480 250" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+
+          <!-- ============ STEP 1: CS picks the rank ============ -->
+          <g id="ph1" class="ph">
+            <text x="18" y="26" fill="#8a87a0" font-size="11">CS picks the rank — the shout reaches all, CS names one</text>
+            <line x1="40" y1="58" x2="460" y2="58" stroke="#5a8fd0" stroke-width="2"/>
+            <text x="40" y="50" fill="#5a8fd0" font-size="10">CA / CK — broadcast to everyone</text>
+
+            <rect x="55" y="92" width="50" height="40" rx="6" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="80" y="117" text-anchor="middle" fill="#8a87a0" font-size="12">R0</text>
+            <rect x="155" y="92" width="50" height="40" rx="6" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="180" y="117" text-anchor="middle" fill="#8a87a0" font-size="12">R1</text>
+            <rect x="255" y="92" width="50" height="40" rx="6" fill="rgba(95,174,106,0.16)" stroke="#5fae6a" stroke-width="2.5"/>
+            <text x="280" y="117" text-anchor="middle" fill="#5fae6a" font-size="12" font-weight="600">R2</text>
+            <rect x="355" y="92" width="50" height="40" rx="6" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="380" y="117" text-anchor="middle" fill="#8a87a0" font-size="12">R3</text>
+
+            <text x="280" y="150" text-anchor="middle" fill="#5fae6a" font-size="10" class="pulse">CS_n pulled low → only this one listens</text>
+
+            <line x1="40" y1="200" x2="460" y2="200" stroke="#e0a34b" stroke-width="2"/>
+            <text x="40" y="222" fill="#e0a34b" font-size="10">DQ / DQS — one shared wire</text>
+            <text x="250" y="242" text-anchor="middle" fill="#8a87a0" font-size="11">CA is the shout · CS is the name call · the wire is shared</text>
+          </g>
+
+          <!-- ============ STEP 2: nearest first, farthest last ============ -->
+          <g id="ph2" class="ph">
+            <text x="18" y="26" fill="#8a87a0" font-size="11">nearest first, farthest last — flight time</text>
+
+            <rect x="28" y="92" width="30" height="30" rx="4" fill="#5a8fd0"/>
+            <text x="43" y="111" text-anchor="middle" fill="#14141f" font-size="9">CTRL</text>
+            <line x1="58" y1="107" x2="460" y2="107" stroke="#8a87a0" stroke-width="2"/>
+
+            <rect x="95" y="88" width="40" height="38" rx="5" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="115" y="112" text-anchor="middle" fill="#e8e6f0" font-size="12">R0</text>
+            <rect x="185" y="88" width="40" height="38" rx="5" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="205" y="112" text-anchor="middle" fill="#e8e6f0" font-size="12">R1</text>
+            <rect x="275" y="88" width="40" height="38" rx="5" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="295" y="112" text-anchor="middle" fill="#e8e6f0" font-size="12">R2</text>
+            <rect x="365" y="88" width="40" height="38" rx="5" fill="#1a1a28" stroke="#8a87a0"/>
+            <text x="385" y="112" text-anchor="middle" fill="#e8e6f0" font-size="12">R3</text>
+
+            <circle cx="115" cy="107" r="5" fill="#5fae6a"/>
+            <circle cx="205" cy="107" r="5" fill="#e0a34b"/>
+            <circle cx="295" cy="107" r="5" fill="#e0a34b"/>
+            <circle cx="385" cy="107" r="5" fill="#c0554f"/>
+            <text x="115" y="78" text-anchor="middle" fill="#5fae6a" font-size="9">t0 · first</text>
+            <text x="205" y="78" text-anchor="middle" fill="#e0a34b" font-size="9">t1</text>
+            <text x="295" y="78" text-anchor="middle" fill="#e0a34b" font-size="9">t2</text>
+            <text x="385" y="78" text-anchor="middle" fill="#c0554f" font-size="9">t3 · last</text>
+
+            <text x="250" y="178" text-anchor="middle" fill="#8a87a0" font-size="11">near → first, far → last</text>
+            <text x="250" y="202" text-anchor="middle" fill="#c0554f" font-size="11">Δ = t3 − t0 — the gap rank-to-rank must cover</text>
+            <text x="250" y="228" text-anchor="middle" fill="#8a87a0" font-size="10">only first and last need measuring — the rest fall in between</text>
+          </g>
+
+          <!-- ============ STEP 3: one talker at a time, plus the gap ============ -->
+          <g id="ph3" class="ph">
+            <text x="18" y="26" fill="#8a87a0" font-size="11">one talks at a time, with a gap between</text>
+            <line x1="40" y1="135" x2="460" y2="135" stroke="#8a87a0" stroke-width="2"/>
+
+            <rect x="58" y="112" width="118" height="40" rx="5" fill="rgba(90,143,208,0.25)" stroke="#5a8fd0" stroke-width="1.5"/>
+            <text x="117" y="136" text-anchor="middle" fill="#5a8fd0" font-size="11">rank A's burst</text>
+
+            <text x="188" y="104" text-anchor="middle" fill="#c0554f" font-size="9">gap</text>
+            <rect x="180" y="120" width="28" height="28" fill="none" stroke="#c0554f" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+            <rect x="216" y="112" width="118" height="40" rx="5" fill="rgba(224,163,75,0.25)" stroke="#e0a34b" stroke-width="1.5"/>
+            <text x="275" y="136" text-anchor="middle" fill="#e0a34b" font-size="11">rank B's burst</text>
+
+            <text x="250" y="195" text-anchor="middle" fill="#8a87a0" font-size="11">one rank drives, the others go high-impedance</text>
+            <text x="250" y="220" text-anchor="middle" fill="#c0554f" font-size="11">the gap = turnaround — switch too fast and they collide</text>
+          </g>
+
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="prev">‹ Back</button>
+        <button id="next" class="primary">Next ›</button>
+        <span class="hint" id="hint">Step 1 of 3</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Nearest rank hears first, farthest hears last. Measure the gap, and switching stays on time — without collision.</div>
+  </div>
+
+<script>
+  const steps = ['ph1', 'ph2', 'ph3'];
+  const bubbles = [
+    'A command broadcasts down the fly-by line to every rank, but each rank has its own CS_n — only the rank whose chip-select is pulled low listens. CA is the shout, CS is the name call, DQ/DQS is the shared mic.',
+    'Ranks sit at different distances along the line, so the signal reaches the near one first and the far one last — flight time. Rank-to-rank measures this gap, so switching stays on time.',
+    'The DQ/DQS wire is shared, so only one rank drives at a time — the others go high-impedance. Between two ranks\' bursts sits a gap: the turnaround. Switch too fast and they collide.'
+  ];
+  let i = 0;
+  const bubble = document.getElementById('bubble');
+  const hint = document.getElementById('hint');
+  const golden = document.getElementById('golden');
+  function render() {
+    steps.forEach((s, k) => document.getElementById(s).classList.toggle('show', k === i));
+    bubble.innerHTML = bubbles[i];
+    hint.textContent = 'Step ' + (i + 1) + ' of ' + steps.length;
+    golden.classList.toggle('show', i === steps.length - 1);
+    document.getElementById('prev').disabled = (i === 0);
+    document.getElementById('next').textContent = (i === steps.length - 1) ? 'Restart' : 'Next ›';
+  }
+  document.getElementById('next').addEventListener('click', () => { i = (i + 1) % steps.length; render(); });
+  document.getElementById('prev').addEventListener('click', () => { i = (i - 1 + steps.length) % steps.length; render(); });
+  render();
+  // auto-play
+  let t = setInterval(() => { i = (i + 1) % steps.length; render(); }, 4200);
+  document.querySelectorAll('button').forEach(b => b.addEventListener('click', () => { clearInterval(t); }));
+</script>
+</body>
+</html>
