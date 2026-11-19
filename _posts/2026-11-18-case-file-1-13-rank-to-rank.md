@@ -94,7 +94,7 @@ Fly-by arrival order is monotonic: rank 0 nearest, rank N farthest. The first an
 
 Measuring each rank's offset isn't enough. Back-to-back access to two different ranks — how short a gap is allowed? Too short, and the first hasn't finished when the second collides.
 
-The JEDEC baseline is tCCD_L / tCCD_S (CAS-to-CAS minimum spacing; tCCD_L is programmed in MR13, JESD79-5 §3.5.15 + Table 53; different bank groups, including different ranks, use tCCD_L). On top of this spec baseline, add the first-to-last rank's timing delta and a guardband.
+The JEDEC baseline is tCCD_L / tCCD_S (CAS-to-CAS minimum spacing; tCCD_L is programmed in MR13, JESD79-5 §3.5.15 + Table 53; different bank groups use tCCD_S, the same bank group uses tCCD_L). On top of this spec baseline, add the first-to-last rank's timing delta and a guardband.
 
 It takes the maximum delta (max − min), not the average. The worst case is switching from the rank with the largest timing to the one with the smallest; the physical gap must cover that whole span, plus margin. Same idea as the Vref case: keep every margin at the worst case.
 
