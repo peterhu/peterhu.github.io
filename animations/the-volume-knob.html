@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — The Volume Knob</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --night: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 14px 26px;
+  }
+  .head { text-align: center; margin-bottom: 10px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 16px; max-width: 900px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 4px; }
+  .detective svg { width: 82px; height: 82px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 9px; font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 4px; min-width: 340px; }
+
+  .scene { position: relative; height: 300px; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  .ph { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+
+  .golden {
+    margin-top: 12px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px;
+    text-align: center; max-width: 900px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .4; cursor: default; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 2.4</div>
+    <h1>The Volume Knob</h1>
+    <div class="sub">A DAC twists the decision line — 8 bits, 256 steps, one 1/256 of VDDQ each.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">Vref is a voltage twisted out by a DAC…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">DAC · capacitive divider · pinned MSB</div>
+        <svg viewBox="0 0 560 260" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g id="ph1" class="ph"></g>
+          <g id="ph2" class="ph"></g>
+          <g id="ph3" class="ph"></g>
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="prev">‹ Back</button>
+        <button id="next" class="primary">Next ›</button>
+        <span class="hint" id="hint">Step 1 of 3</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">The line that decides 0 or 1 is twisted out by a volume knob — 256 steps, each one 1/256 of VDDQ.</div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var RED = "#c0554f", GOLD = "#e0a34b", GREEN = "#5fae6a", BLUE = "#5a8fd0", DIM = "#8a87a0";
+
+  function line(x1, y1, x2, y2, color, w) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + (w || 1.5) + '"/>';
+  }
+
+  // ---- Step 1: the volume knob --------------------------------------------
+  var ph1 = document.getElementById("ph1");
+  var s1 = '<text x="18" y="24" fill="#8a87a0" font-size="11">① a digital code becomes a voltage</text>';
+  // dial
+  s1 += '<circle cx="220" cy="130" r="70" fill="#1e1e2e" stroke="' + GOLD + '" stroke-width="2"/>';
+  for (var i = 0; i < 16; i++) {
+    var a = -Math.PI / 2 + i * (2 * Math.PI / 16);
+    var x1 = 220 + 62 * Math.cos(a), y1 = 130 + 62 * Math.sin(a);
+    var x2 = 220 + 70 * Math.cos(a), y2 = 130 + 70 * Math.sin(a);
+    s1 += line(x1, y1, x2, y2, DIM, 1.5);
+  }
+  // needle pointing up-right
+  var na = -Math.PI / 2 + 5 * (2 * Math.PI / 16);
+  s1 += line(220, 130, 220 + 52 * Math.cos(na), 130 + 52 * Math.sin(na), GOLD, 3);
+  s1 += '<circle cx="220" cy="130" r="6" fill="' + GOLD + '"/>';
+  s1 += '<text x="220" y="228" text-anchor="middle" fill="' + GOLD + '" font-size="12">8 bits = 256 steps</text>';
+  s1 += '<text x="220" y="246" text-anchor="middle" fill="' + DIM + '" font-size="10">write a code → the DAC puts out that voltage</text>';
+  // code → voltage arrow on the right
+  s1 += '<text x="330" y="110" text-anchor="middle" fill="' + DIM + '" font-size="11">digital code</text>';
+  s1 += line(330, 120, 330, 150, DIM, 1.5);
+  s1 += '<polygon points="330,150 325,143 335,143" fill="' + DIM + '"/>';
+  s1 += '<text x="330" y="166" text-anchor="middle" fill="' + GREEN + '" font-size="11">voltage (Vref)</text>';
+  ph1.innerHTML = s1;
+
+  // ---- Step 2: the capacitive divider --------------------------------------
+  function cap(x, yTop, yBottom, color) {
+    var yMid = (yTop + yBottom) / 2;
+    return line(x, yTop, x, yMid - 4, color) +
+           line(x - 9, yMid - 4, x + 9, yMid - 4, color, 2.5) +
+           line(x - 9, yMid + 4, x + 9, yMid + 4, color, 2.5) +
+           line(x, yMid + 4, x, yBottom, color);
+  }
+  var ph2 = document.getElementById("ph2");
+  var s2 = '<text x="18" y="24" fill="#8a87a0" font-size="11">② inside it\'s a capacitive divider, not an R-2R ladder</text>';
+  s2 += '<text x="58" y="62" fill="' + RED + '" font-size="13" font-weight="600">VDDQ</text>';
+  s2 += line(108, 58, 220, 58, RED) + line(220, 58, 220, 104, RED) + line(220, 104, 240, 104, RED);
+  s2 += '<text x="500" y="62" text-anchor="end" fill="' + RED + '" font-size="13" font-weight="600">VTT</text>';
+  s2 += line(450, 58, 340, 58, RED) + line(340, 58, 340, 104, RED) + line(340, 104, 320, 104, RED);
+  s2 += line(240, 104, 320, 104, RED, 2);
+  s2 += cap(250, 104, 164, GOLD) + cap(280, 104, 164, GOLD) + cap(310, 104, 164, GOLD);
+  s2 += '<text x="280" y="90" text-anchor="middle" fill="' + GOLD + '" font-size="11">C_top · the code decides how many</text>';
+  s2 += line(240, 164, 400, 164, GREEN, 2.5);
+  s2 += '<text x="232" y="159" text-anchor="end" fill="' + GREEN + '" font-size="13" font-weight="600">Vref</text>';
+  s2 += cap(250, 164, 214, BLUE) + cap(280, 164, 214, BLUE) + cap(310, 164, 214, BLUE);
+  s2 += '<text x="280" y="228" text-anchor="middle" fill="' + BLUE + '" font-size="11">C_bottom</text>';
+  s2 += line(240, 214, 320, 214, DIM, 2);
+  s2 += line(280, 214, 280, 232, DIM);
+  s2 += line(270, 232, 290, 232, DIM, 2) + line(274, 237, 286, 237, DIM, 2) + line(277, 242, 283, 242, DIM, 2);
+  s2 += '<text x="280" y="256" text-anchor="middle" fill="' + DIM + '" font-size="12" font-weight="600">VSS (ground)</text>';
+  s2 += line(400, 164, 435, 164, GREEN, 1.5);
+  s2 += '<polygon points="440,146 440,182 470,164" fill="#1e1e2e" stroke="' + GREEN + '" stroke-width="2"/>';
+  s2 += '<text x="446" y="160" fill="' + DIM + '" font-size="10">−</text><text x="446" y="172" fill="' + GREEN + '" font-size="12" font-weight="600">+</text>';
+  s2 += '<text x="455" y="139" text-anchor="middle" fill="' + DIM + '" font-size="11">comparator</text>';
+  s2 += '<text x="486" y="168" fill="' + GREEN + '" font-size="13" font-weight="600">0 / 1</text>';
+  ph2.innerHTML = s2;
+
+  // ---- Step 3: the top bit is pinned --------------------------------------
+  var ph3 = document.getElementById("ph3");
+  var s3 = '<text x="18" y="24" fill="#8a87a0" font-size="11">③ the top bit is pinned to 1 — the default lands at 75%</text>';
+  var bits = [1, "x", "x", "x", "x", "x", "x", "x"];
+  for (var b = 0; b < 8; b++) {
+    var bx = 120 + b * 42;
+    var isPinned = (b === 0);
+    var col = isPinned ? RED : DIM;
+    s3 += '<rect x="' + bx + '" y="80" width="34" height="42" rx="6" fill="#1e1e2e" stroke="' + col + '" stroke-width="2"/>';
+    s3 += '<text x="' + (bx + 17) + '" y="108" text-anchor="middle" fill="' + col + '" font-size="15" font-weight="700">' + bits[b] + '</text>';
+  }
+  s3 += '<text x="137" y="64" text-anchor="middle" fill="' + RED + '" font-size="10">1 · pinned by hardware</text>';
+  s3 += '<text x="280" y="64" text-anchor="middle" fill="' + DIM + '" font-size="10">programmable · 7 bits</text>';
+  s3 += '<text x="280" y="160" text-anchor="middle" fill="' + DIM + '" font-size="11">pinned MSB = 50% · default code adds the rest</text>';
+  s3 += '<text x="280" y="180" text-anchor="middle" fill="' + GREEN + '" font-size="12" font-weight="600">default = 75% VDDQ</text>';
+  s3 += '<text x="280" y="230" text-anchor="middle" fill="' + DIM + '" font-size="10">each DQ also gets its own 7-bit base, plus one shared adjustment — added in hardware</text>';
+  ph3.innerHTML = s3;
+
+  // ---- step machinery -----------------------------------------------------
+  var steps = ["ph1", "ph2", "ph3"];
+  var bubbles = [
+    "Vref is a voltage twisted out by a DAC — like a <b>volume knob</b>. Write a digital code and the DAC turns it into a voltage; 8 bits gives 256 steps, each 1/256 of VDDQ.",
+    "Inside, it's a <b>capacitive divider</b>, not an R-2R ladder. One string of capacitors toward VDDQ/VTT, one toward VSS — the node tapped in the middle is Vref, and the code decides how many caps are switched in.",
+    "The <b>top bit is hardwired to 1</b>, so only the lower 7 bits are programmable. The pinned MSB gives half, the default code adds the rest — that's the 75% default."
+  ];
+  var i = 0;
+  var bubble = document.getElementById("bubble");
+  var hint = document.getElementById("hint");
+  var golden = document.getElementById("golden");
+  function render() {
+    steps.forEach(function (s, k) { document.getElementById(s).classList.toggle("show", k === i); });
+    bubble.innerHTML = bubbles[i];
+    hint.textContent = "Step " + (i + 1) + " of " + steps.length;
+    golden.classList.toggle("show", i === steps.length - 1);
+    document.getElementById("prev").disabled = (i === 0);
+    document.getElementById("next").textContent = (i === steps.length - 1) ? "Restart" : "Next ›";
+  }
+  document.getElementById("next").addEventListener("click", function () { i = (i + 1) % steps.length; render(); });
+  document.getElementById("prev").addEventListener("click", function () { i = (i - 1 + steps.length) % steps.length; render(); });
+  render();
+  var t = setInterval(function () { i = (i + 1) % steps.length; render(); }, 5200);
+  document.querySelectorAll("button").forEach(function (b) { b.addEventListener("click", function () { clearInterval(t); }); });
+})();
+</script>
+</body>
+</html>
