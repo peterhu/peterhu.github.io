@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DFE — Subtract the Previous Echo</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --night: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 22px 14px 28px;
+  }
+  .head { text-align: center; margin-bottom: 12px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 3px; max-width: 640px; }
+
+  .scene {
+    width: 100%; max-width: 680px; border-radius: 12px;
+    background: #1a1a28; border: 1px solid var(--line); overflow: hidden;
+  }
+  .scene svg { display: block; width: 100%; height: auto; }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DFE · Decision Feedback Equalizer</div>
+    <h1>Subtract the Previous Echo</h1>
+    <div class="sub">Hear the previous bit (decide 0/1), work out its echo, subtract it from this bit</div>
+  </div>
+
+  <div class="scene">
+    <svg id="svg" viewBox="0 0 600 300" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg"></svg>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var RED = "#c0554f", GOLD = "#e0a34b", GREEN = "#5fae6a", BLUE = "#5a8fd0", DIM = "#8a87a0";
+
+  function line(x1, y1, x2, y2, color, w) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + (w || 1.5) + '"/>';
+  }
+  function arrow(x1, x2, y, color) {
+    color = color || DIM;
+    return line(x1, y, x2, y, color, 1.5) +
+           '<polygon points="' + x2 + ',' + y + ' ' + (x2 - 6) + ',' + (y - 4) + ' ' + (x2 - 6) + ',' + (y + 4) + '" fill="' + color + '"/>';
+  }
+  function box(x, y, w, h, label, sub, color) {
+    var cx = x + w / 2;
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="10" fill="#1e1e2e" stroke="' + color + '" stroke-width="2"/>' +
+           '<text x="' + cx + '" y="' + (y + h / 2 - 1) + '" text-anchor="middle" fill="' + color + '" font-size="13" font-weight="600">' + label + '</text>' +
+           (sub ? '<text x="' + cx + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" fill="#8a87a0" font-size="10">' + sub + '</text>' : '');
+  }
+
+  var s = '';
+
+  s += '<text x="300" y="30" text-anchor="middle" fill="#e8e6f0" font-size="15" font-weight="600">receive "this bit + the previous echo" → subtract the echo → keep just this bit</text>';
+
+  s += box(24, 110, 118, 56, "raw signal", "this bit + prev echo", RED);
+  s += arrow(142, 178, 138, DIM);
+
+  s += '<circle cx="208" cy="138" r="30" fill="#1e1e2e" stroke="' + GOLD + '" stroke-width="2"/>';
+  s += '<text x="208" y="146" text-anchor="middle" fill="' + GOLD + '" font-size="22" font-weight="700">−</text>';
+  s += '<text x="208" y="182" text-anchor="middle" fill="' + GOLD + '" font-size="11">subtractor</text>';
+
+  s += arrow(238, 274, 138, DIM);
+  s += box(274, 110, 112, 56, "clean signal", "just this bit", GREEN);
+  s += arrow(386, 422, 138, DIM);
+
+  s += '<polygon points="430,118 430,158 462,138" fill="#1e1e2e" stroke="' + BLUE + '" stroke-width="2"/>';
+  s += '<text x="438" y="134" fill="' + DIM + '" font-size="10">−</text><text x="438" y="147" fill="' + BLUE + '" font-size="12" font-weight="600">+</text>';
+  s += '<text x="446" y="110" text-anchor="middle" fill="' + DIM + '" font-size="11">slicer</text>';
+
+  s += arrow(462, 500, 138, DIM);
+  s += '<text x="512" y="142" fill="' + GREEN + '" font-size="14" font-weight="700">0 / 1</text>';
+
+  s += line(446, 138, 446, 240, DIM, 1.5);
+  s += '<text x="458" y="200" fill="' + DIM + '" font-size="10">held one beat</text>';
+  s += '<text x="458" y="214" fill="' + DIM + '" font-size="10">(remember the last bit)</text>';
+  s += line(446, 240, 208, 240, DIM, 1.5);
+  s += '<text x="327" y="232" text-anchor="middle" fill="' + GOLD + '" font-size="11">tail estimate = previous decision × tap</text>';
+  s += line(208, 240, 208, 168, GOLD, 1.5);
+  s += '<polygon points="208,168 202,176 214,176" fill="' + GOLD + '"/>';
+  s += '<text x="218" y="215" text-anchor="middle" fill="' + GOLD + '" font-size="10">subtract</text>';
+
+  s += '<text x="300" y="285" text-anchor="middle" fill="' + DIM + '" font-size="11">the decision is clean (0/1, no noise) — subtracting it doesn\'t drag noise in</text>';
+
+  document.getElementById("svg").innerHTML = s;
+})();
+</script>
+</body>
+</html>

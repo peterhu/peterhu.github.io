@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DRAM Detective — Two Diseases, Three Remedies</title>
+<style>
+  :root {
+    --bg: #14141f; --panel: #1e1e2e; --ink: #e8e6f0; --dim: #8a87a0;
+    --accent: #e0a34b; --line: #34344a; --night: #5a8fd0; --warn: #c0554f; --ok: #5fae6a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 20px 14px 26px;
+  }
+  .head { text-align: center; margin-bottom: 10px; }
+  .head .tag { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent); }
+  .head h1 { font-size: 19px; font-weight: 600; margin-top: 3px; }
+  .head .sub { color: var(--dim); font-size: 12px; margin-top: 2px; }
+
+  .stage { display: flex; align-items: flex-start; gap: 16px; max-width: 900px; width: 100%; }
+
+  .detective { flex: 0 0 118px; text-align: center; padding-top: 4px; }
+  .detective svg { width: 82px; height: 82px; transition: transform .3s ease; }
+  .detective .bubble {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 9px; font-size: 11.5px; line-height: 1.4; margin-top: 6px; text-align: left;
+    min-height: 66px; color: var(--ink);
+  }
+  .detective .bubble b { color: var(--accent); }
+
+  .center { flex: 1 1 auto; padding-top: 4px; min-width: 340px; }
+
+  .scene { position: relative; height: 300px; border-radius: 12px; background: #1a1a28; border: 1px solid var(--line); overflow: hidden; }
+  .scene svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  .scene-label { position: absolute; top: 8px; left: 12px; font-size: 10px; letter-spacing: 1.5px; color: var(--dim); text-transform: uppercase; z-index: 6; }
+
+  .ph { opacity: 0; transition: opacity .5s ease; }
+  .show { opacity: 1; }
+
+  .golden {
+    margin-top: 12px; background: linear-gradient(180deg, #2a2317, #1e1a12);
+    border: 1px solid var(--accent); border-radius: 12px; padding: 12px 16px;
+    text-align: center; max-width: 900px; width: 100%;
+    opacity: 0; transform: translateY(10px); transition: opacity .5s ease, transform .5s ease;
+  }
+  .golden.show { opacity: 1; transform: translateY(0); }
+  .golden .rule { font-size: 16px; font-weight: 700; color: var(--accent); line-height: 1.4; }
+
+  .controls { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
+  button {
+    background: var(--panel); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 8px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #14141f; border-color: var(--accent); font-weight: 600; }
+  button:disabled { opacity: .4; cursor: default; }
+  .hint { color: var(--dim); font-size: 12px; }
+
+  @media (max-width: 640px) {
+    .stage { flex-direction: column; align-items: center; }
+    .detective { flex: none; width: 100%; }
+    .center { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="head">
+    <div class="tag">DRAM Detective · Case File 2.5</div>
+    <h1>Two Diseases, Three Remedies</h1>
+    <div class="sub">ODT swallows the reflection, CTLE turns up the highs, DFE cancels the echo.</div>
+  </div>
+
+  <div class="stage">
+    <div class="detective">
+      <svg id="det" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+        <path d="M48 102 L112 102 L123 158 L37 158 Z" fill="#33465c"/>
+        <path d="M48 102 L112 102 L106 112 L54 112 Z" fill="#28394d"/>
+        <rect x="72" y="88" width="16" height="15" fill="#f5cd9f"/>
+        <ellipse cx="80" cy="66" rx="22" ry="24" fill="#f5cd9f"/>
+        <ellipse cx="89" cy="71" rx="8" ry="5.5" fill="#eab98c"/>
+        <circle cx="70" cy="64" r="2.6" fill="#26262b"/>
+        <circle cx="85" cy="64" r="2.6" fill="#26262b"/>
+        <path d="M63 57 L75 55" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M83 55 L92 57" stroke="#26262b" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M53 42 Q54 18 80 16 Q106 18 107 42 Z" fill="#8f6c4a"/>
+        <path d="M53 42 Q80 51 107 42 L107 44 Q80 53 53 44 Z" fill="#7a5a3e"/>
+        <rect x="53" y="37" width="54" height="5" fill="#6b4e35"/>
+        <path d="M53 41 Q45 53 47 61 Q59 59 60 46 Z" fill="#8f6c4a"/>
+        <path d="M107 41 Q115 53 113 61 Q101 59 100 46 Z" fill="#8f6c4a"/>
+        <line x1="109" y1="81" x2="124" y2="96" stroke="#4a3a28" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="98" cy="64" r="15" fill="#cfe9f4" opacity="0.55" stroke="#4a3a28" stroke-width="4.5"/>
+      </svg>
+      <div class="bubble" id="bubble">A signal over a trace catches two diseases…</div>
+    </div>
+
+    <div class="center">
+      <div class="scene">
+        <div class="scene-label">two diseases · three remedies · DFE</div>
+        <svg viewBox="0 0 560 300" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g id="ph1" class="ph"></g>
+          <g id="ph2" class="ph"></g>
+          <g id="ph3" class="ph"></g>
+        </svg>
+      </div>
+
+      <div class="controls">
+        <button id="prev">‹ Back</button>
+        <button id="next" class="primary">Next ›</button>
+        <span class="hint" id="hint">Step 1 of 3</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="golden" id="golden">
+    <div class="rule">Two diseases, three remedies — ODT swallows the reflection, CTLE turns up the highs, DFE cancels the echo.</div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var RED = "#c0554f", GOLD = "#e0a34b", GREEN = "#5fae6a", BLUE = "#5a8fd0", DIM = "#8a87a0";
+
+  function line(x1, y1, x2, y2, color, w) {
+    return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + color + '" stroke-width="' + (w || 1.5) + '"/>';
+  }
+  function arrow(x1, x2, y, color) {
+    color = color || DIM;
+    return line(x1, y, x2, y, color, 1.5) +
+           '<polygon points="' + x2 + ',' + y + ' ' + (x2 - 6) + ',' + (y - 4) + ' ' + (x2 - 6) + ',' + (y + 4) + '" fill="' + color + '"/>';
+  }
+  function box(x, y, w, h, label, sub, color) {
+    var cx = x + w / 2;
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="10" fill="#1e1e2e" stroke="' + color + '" stroke-width="2"/>' +
+           '<text x="' + cx + '" y="' + (y + h / 2 - 1) + '" text-anchor="middle" fill="' + color + '" font-size="13" font-weight="600">' + label + '</text>' +
+           (sub ? '<text x="' + cx + '" y="' + (y + h / 2 + 15) + '" text-anchor="middle" fill="#8a87a0" font-size="9.5">' + sub + '</text>' : '');
+  }
+
+  // Step 1: two diseases
+  var ph1 = document.getElementById("ph1");
+  var s1 = '<text x="18" y="28" fill="#8a87a0" font-size="11">① two diseases on the line</text>';
+  s1 += box(36, 70, 220, 110, "reflection", "bounces off the far end", RED);
+  s1 += '<text x="146" y="205" text-anchor="middle" fill="' + RED + '" font-size="11">→ ODT swallows it</text>';
+  s1 += box(304, 70, 220, 110, "ISI", "previous bit\'s tail drags on", BLUE);
+  s1 += '<text x="414" y="205" text-anchor="middle" fill="' + BLUE + '" font-size="11">→ CTLE + DFE cancel it</text>';
+  s1 += '<text x="280" y="250" text-anchor="middle" fill="' + DIM + '" font-size="11">high-frequency loss = ISI — the same thing from two angles</text>';
+  s1 += '<text x="280" y="270" text-anchor="middle" fill="' + DIM + '" font-size="10">so there are two diseases, not three</text>';
+  ph1.innerHTML = s1;
+
+  // Step 2: three remedies
+  var ph2 = document.getElementById("ph2");
+  var s2 = '<text x="18" y="28" fill="#8a87a0" font-size="11">② three remedies, all on the host\'s receive side (RX)</text>';
+  s2 += box(24, 80, 160, 110, "ODT", "swallow the reflection", RED);
+  s2 += box(200, 80, 160, 110, "CTLE", "boost the highs", GOLD);
+  s2 += box(376, 80, 160, 110, "DFE", "subtract the tail", BLUE);
+  s2 += '<text x="280" y="235" text-anchor="middle" fill="' + DIM + '" font-size="11">reads go DRAM → host, and these three rescue the arriving signal</text>';
+  s2 += '<text x="280" y="258" text-anchor="middle" fill="' + DIM + '" font-size="10">the transmit side (FFE pre-emphasis) is a different tool — Case 2.6</text>';
+  ph2.innerHTML = s2;
+
+  // Step 3: DFE circuit (echo cancellation)
+  var ph3 = document.getElementById("ph3");
+  var s3 = '<text x="18" y="28" fill="#8a87a0" font-size="11">③ DFE: subtract the previous echo</text>';
+  s3 += box(20, 100, 112, 52, "raw signal", "this bit + prev echo", RED);
+  s3 += arrow(132, 166, 126, DIM);
+  s3 += '<circle cx="190" cy="126" r="26" fill="#1e1e2e" stroke="' + GOLD + '" stroke-width="2"/>';
+  s3 += '<text x="190" y="134" text-anchor="middle" fill="' + GOLD + '" font-size="20" font-weight="700">−</text>';
+  s3 += arrow(216, 250, 126, DIM);
+  s3 += box(250, 100, 108, 52, "clean signal", "just this bit", GREEN);
+  s3 += arrow(358, 392, 126, DIM);
+  s3 += '<polygon points="400,106 400,146 430,126" fill="#1e1e2e" stroke="' + BLUE + '" stroke-width="2"/>';
+  s3 += '<text x="408" y="122" fill="' + DIM + '" font-size="9">−</text><text x="408" y="134" fill="' + BLUE + '" font-size="11" font-weight="600">+</text>';
+  s3 += '<text x="415" y="98" text-anchor="middle" fill="' + DIM + '" font-size="10">slicer</text>';
+  s3 += arrow(430, 466, 126, DIM);
+  s3 += '<text x="478" y="130" fill="' + GREEN + '" font-size="13" font-weight="700">0 / 1</text>';
+  // feedback loop
+  s3 += line(415, 126, 415, 236, DIM, 1.5);
+  s3 += '<text x="425" y="190" fill="' + DIM + '" font-size="9">held one beat</text>';
+  s3 += line(415, 236, 190, 236, DIM, 1.5);
+  s3 += '<text x="302" y="228" text-anchor="middle" fill="' + GOLD + '" font-size="10">tail = previous decision × tap</text>';
+  s3 += line(190, 236, 190, 152, GOLD, 1.5);
+  s3 += '<polygon points="190,152 184,160 196,160" fill="' + GOLD + '"/>';
+  s3 += '<text x="280" y="275" text-anchor="middle" fill="' + DIM + '" font-size="10">the decision is clean (0/1, no noise) — subtracting it doesn\'t add noise</text>';
+  ph3.innerHTML = s3;
+
+  // step machinery
+  var steps = ["ph1", "ph2", "ph3"];
+  var bubbles = [
+    "A signal over a trace catches two diseases: <b>reflection</b>, and <b>ISI</b>. High-frequency loss and ISI are the same thing from two angles — frequency vs time.",
+    "Three remedies, all on the host's receive side. <b>ODT</b> swallows the reflection, <b>CTLE</b> boosts the highs, <b>DFE</b> subtracts the previous bit's tail.",
+    "<b>DFE</b> hears the previous bit (decides 0/1), works out its tail, and subtracts it — cancelling ISI without amplifying noise."
+  ];
+  var i = 0;
+  var bubble = document.getElementById("bubble");
+  var hint = document.getElementById("hint");
+  var golden = document.getElementById("golden");
+  function render() {
+    steps.forEach(function (s, k) { document.getElementById(s).classList.toggle("show", k === i); });
+    bubble.innerHTML = bubbles[i];
+    hint.textContent = "Step " + (i + 1) + " of " + steps.length;
+    golden.classList.toggle("show", i === steps.length - 1);
+    document.getElementById("prev").disabled = (i === 0);
+    document.getElementById("next").textContent = (i === steps.length - 1) ? "Restart" : "Next ›";
+  }
+  document.getElementById("next").addEventListener("click", function () { i = (i + 1) % steps.length; render(); });
+  document.getElementById("prev").addEventListener("click", function () { i = (i - 1 + steps.length) % steps.length; render(); });
+  render();
+  var t = setInterval(function () { i = (i + 1) % steps.length; render(); }, 5200);
+  document.querySelectorAll("button").forEach(function (b) { b.addEventListener("click", function () { clearInterval(t); }); });
+})();
+</script>
+</body>
+</html>
